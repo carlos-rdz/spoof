@@ -65,6 +65,11 @@ def get_ngrok_url():
 _track_store = {}
 _track_lock = threading.Lock()
 
+# ── Event log for dashboard ────────────────────────────────────────
+# List of { "type": "send"|"open", "time": ..., "track_id": ..., "from": ..., "to": ..., "subject": ..., "success": bool }
+_event_log = []
+_event_lock = threading.Lock()
+
 # 1x1 transparent GIF (43 bytes)
 TRACKING_GIF = base64.b64decode(
     "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
@@ -461,12 +466,18 @@ def send_spoofed_email(from_addr, to_addr, envelope_from, subject, body_text, bo
                 log.append(f"  Check {to_addr}'s inbox or spam folder.")
                 log.append(f"  🔍 Tracking pixel ID: {track_id}")
                 # Store tracking info
+                sent_time = datetime.now(timezone.utc).isoformat()
                 with _track_lock:
                     _track_store[track_id] = {
                         "from": from_addr, "to": to_addr, "subject": subject,
-                        "sent_at": datetime.now(timezone.utc).isoformat(),
+                        "sent_at": sent_time,
                         "opens": []
                     }
+                with _event_lock:
+                    _event_log.append({
+                        "type": "send", "time": sent_time, "track_id": track_id,
+                        "from": from_addr, "to": to_addr, "subject": subject, "success": True
+                    })
                 return {"success": True, "log": "\n".join(log), "track_id": track_id}
             else:
                 log.append(f"  ✗ Rejected at DATA stage: {code} {detail}")
@@ -474,6 +485,12 @@ def send_spoofed_email(from_addr, to_addr, envelope_from, subject, body_text, bo
 
     except Exception as e:
         log.append(f"  ✗ Error: {type(e).__name__}: {e}")
+        with _event_lock:
+            _event_log.append({
+                "type": "send", "time": datetime.now(timezone.utc).isoformat(),
+                "track_id": track_id, "from": from_addr, "to": to_addr,
+                "subject": subject, "success": False
+            })
         return {"success": False, "log": "\n".join(log)}
 
 
@@ -498,11 +515,114 @@ HTML_PAGE = r"""<!DOCTYPE html>
     padding: .5rem .8rem; margin-bottom: .6rem; max-width: 1200px; width: 100%;
     font-size: .72rem; color: #fca5a5; text-align: center;
   }
+  /* ── Top-level view tabs ── */
+  .view-tabs {
+    display: flex; gap: .3rem; margin-bottom: .8rem; max-width: 1200px; width: 100%;
+  }
+  .view-tab {
+    padding: .45rem 1.2rem; border: 1px solid #334155; border-radius: 8px;
+    background: transparent; color: #64748b; font-size: .78rem; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .view-tab:hover { border-color: #475569; color: #94a3b8; }
+  .view-tab.active { background: #334155; color: #e2e8f0; border-color: #475569; }
+  .view-panel { display: none; width: 100%; }
+  .view-panel.active { display: block; }
+
+  /* ── Password modal ── */
+  .pw-overlay {
+    position: fixed; inset: 0; background: #0f172aee; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pw-overlay.hidden { display: none; }
+  .pw-box {
+    background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+    padding: 1.5rem 2rem; text-align: center; max-width: 340px; width: 90%;
+  }
+  .pw-box h3 { font-size: .9rem; margin-bottom: .6rem; color: #e2e8f0; }
+  .pw-box input {
+    width: 100%; background: #0f172a; border: 1px solid #334155;
+    border-radius: 6px; padding: .45rem .6rem; color: #e2e8f0;
+    font-size: .8rem; text-align: center; margin-bottom: .5rem;
+  }
+  .pw-box input:focus { outline: none; border-color: #3b82f6; }
+  .pw-box .pw-err { color: #f87171; font-size: .65rem; min-height: .9rem; }
+  .pw-box button {
+    padding: .4rem 1.5rem; border: none; border-radius: 6px;
+    background: #3b82f6; color: white; font-size: .75rem; font-weight: 600;
+    cursor: pointer; margin-top: .3rem;
+  }
+  .pw-box button:hover { background: #2563eb; }
+
+  /* ── Dashboard styles ── */
+  .dash-stats {
+    display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
+    flex-wrap: wrap; justify-content: center;
+  }
+  .stat-card {
+    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
+    padding: 1rem 1.5rem; min-width: 140px; text-align: center;
+  }
+  .stat-card .num {
+    font-size: 2rem; font-weight: 700;
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+  .stat-card .label { font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
+  .stat-sends .num { color: #60a5fa; }
+  .stat-opens .num { color: #4ade80; }
+  .stat-rate .num { color: #fbbf24; }
+  .dash-feed { max-width: 700px; width: 100%; margin: 0 auto; }
+  .dash-feed h2 {
+    font-size: .75rem; color: #64748b; text-transform: uppercase;
+    letter-spacing: .05em; margin-bottom: .8rem;
+    padding-bottom: .4rem; border-bottom: 1px solid #1e293b;
+  }
+  .feed-empty {
+    text-align: center; padding: 3rem 1rem; color: #475569; font-size: .85rem;
+  }
+  .dash-event {
+    display: flex; align-items: flex-start; gap: .8rem;
+    padding: .7rem .8rem; border-radius: 8px;
+    margin-bottom: .4rem; transition: background .2s;
+    animation: slideIn .3s ease-out;
+  }
+  .dash-event:hover { background: #1e293b; }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .ev-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: .85rem;
+  }
+  .ev-send .ev-icon { background: #1e3a5f; }
+  .ev-open .ev-icon { background: #14532d; }
+  .ev-body { flex: 1; min-width: 0; }
+  .ev-title { font-size: .8rem; font-weight: 600; margin-bottom: .15rem; }
+  .ev-send .ev-title { color: #93c5fd; }
+  .ev-open .ev-title { color: #86efac; }
+  .ev-detail {
+    font-size: .7rem; color: #64748b;
+    font-family: 'SF Mono', Menlo, monospace;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ev-time {
+    font-size: .6rem; color: #475569; flex-shrink: 0;
+    font-family: 'SF Mono', Menlo, monospace;
+  }
+  .pulse-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; margin-right: 6px; vertical-align: middle;
+    animation: pulse 1.5s infinite;
+  }
   .ngrok-bar {
     display: flex; align-items: center; gap: .4rem; max-width: 1200px; width: 100%;
-    padding: .3rem .8rem; margin-bottom: .8rem; border-radius: 6px;
-    font-size: .65rem; font-family: 'SF Mono', Menlo, monospace;
-    background: #1e293b; border: 1px solid #334155;
+    padding: .3rem .8rem; border-radius: 6px;
+    font-size: .6rem; font-family: 'SF Mono', Menlo, monospace;
+    background: transparent; border: none; color: #475569;
+    position: fixed; bottom: .5rem; left: 50%; transform: translateX(-50%);
+    justify-content: center; opacity: .7;
   }
   .ngrok-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .ngrok-bar.connected { border-color: #4ade8055; background: #14532d22; }
@@ -567,7 +687,6 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .btn.sending { background: #475569; color: #94a3b8; cursor: not-allowed; }
   .btn.success { background: #16a34a; color: white; }
 
-  .preview-toggle { font-size: .65rem; color: #3b82f6; cursor: pointer; text-decoration: underline; }
   .preview-frame { display: none; margin-top: .2rem; background: white; border-radius: 5px; overflow: hidden; }
   .preview-frame.show { display: block; }
   .preview-frame iframe { width: 100%; height: 180px; border: none; }
@@ -772,36 +891,47 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <h1>Spoof</h1>
 <p class="subtitle">Preflight check + live send — test your domain's DMARC / SPF</p>
 <div class="warning-banner">For security testing of domains you own only ;)</div>
-<div class="ngrok-bar" id="ngrok-bar">
-  <span class="ngrok-dot" id="ngrok-dot"></span>
-  <span id="ngrok-text">Checking ngrok...</span>
+<div class="view-tabs">
+  <button class="view-tab active" onclick="switchView('send')">Send</button>
+  <button class="view-tab" onclick="switchView('dashboard')">Dashboard</button>
 </div>
 
+<!-- Password modal for send action -->
+<div class="pw-overlay hidden" id="pw-overlay">
+  <div class="pw-box">
+    <h3>Enter Password</h3>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="off">
+    <div class="pw-err" id="pw-err"></div>
+    <button onclick="checkPassword()">Unlock</button>
+  </div>
+</div>
+
+<div class="view-panel active" id="view-send">
 <div class="layout">
   <!-- LEFT: Form -->
   <div class="panel">
     <h2>Compose</h2>
     <div class="field">
       <label>From (spoofed)</label>
-      <input type="text" id="from_addr" value="support@rvuwallet.com">
-      <div class="hint">What the victim sees</div>
+      <input type="text" id="from_addr" value="" placeholder="sender@example.com">
+      <div class="hint">What the recipient sees</div>
     </div>
     <div class="field">
       <label>Envelope / Return-Path</label>
-      <input type="text" id="envelope_from" value="bounce@rvuwallet.com">
+      <input type="text" id="envelope_from" value="" placeholder="bounce@example.com">
       <div class="hint">Used for SPF &amp; bounces (hidden from user)</div>
     </div>
     <div class="field">
       <label>To</label>
-      <input type="email" id="to_addr" value="" placeholder="victim@example.com" required>
+      <input type="email" id="to_addr" value="" placeholder="user@recipient.com" required>
     </div>
     <div class="field">
       <label>Subject</label>
-      <input type="text" id="subject" value="[SECURITY TEST] Verify your account">
+      <input type="text" id="subject" value="" placeholder="Subject line">
     </div>
     <div class="field">
       <label>Body (text)</label>
-      <textarea id="body_text" rows="2">This is a spoofed email security test from rvuwallet.com domain owner. Check "Show Original" to see SPF/DKIM/DMARC results.</textarea>
+      <textarea id="body_text" rows="2" placeholder="Plain text body"></textarea>
     </div>
     <div class="toggle-row">
       <input type="checkbox" id="use_html" checked>
@@ -809,8 +939,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     </div>
     <div class="field" id="html-field">
       <label>Body (HTML)</label>
-      <textarea id="body_html" rows="2"><div style="font-family:Arial;max-width:600px;margin:0 auto"><div style="background:#1a1a2e;padding:20px;text-align:center"><h1 style="color:#e94560;margin:0">RVU Wallet</h1></div><div style="padding:20px;background:#f5f5f5"><p>Dear Customer,</p><p>Unusual activity detected. Please verify.</p><p style="text-align:center;margin:24px 0"><a href="https://example.com/not-real" style="background:#e94560;color:white;padding:12px 32px;text-decoration:none;border-radius:6px;font-weight:bold">Verify Account</a></p></div><div style="padding:10px;text-align:center;font-size:11px;background:#1a1a2e"><p style="color:#e94560">SECURITY TEST</p></div></div></textarea>
-      <span class="preview-toggle" onclick="showTab('preview', document.querySelectorAll('.tab-btn')[0])">Preview ▸</span>
+      <textarea id="body_html" rows="2"><div style="font-family:Arial;max-width:600px;margin:0 auto;padding:20px"><h2 style="color:#333">Hello</h2><p style="color:#555">This is the HTML body. Edit to see the preview update live.</p></div></textarea>
     </div>
     <div class="field">
       <label>Attachments</label>
@@ -822,7 +951,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
     </div>
     <div class="btn-row">
       <button class="btn btn-probe" id="probe-btn" onclick="runPreflight()">Preflight</button>
-      <button class="btn btn-send" id="send-btn" onclick="sendEmail()">Send</button>
+      <button class="btn btn-send" id="send-btn" onclick="requirePassword(sendEmail)">Send</button>
     </div>
   </div>
 
@@ -920,8 +1049,133 @@ HTML_PAGE = r"""<!DOCTYPE html>
     </div>
   </div>
 </div>
+</div><!-- /view-send -->
+
+<div class="view-panel" id="view-dashboard">
+  <div class="dash-stats">
+    <div class="stat-card stat-sends">
+      <div class="num" id="stat-sends">0</div>
+      <div class="label">Emails Sent</div>
+    </div>
+    <div class="stat-card stat-opens">
+      <div class="num" id="stat-opens">0</div>
+      <div class="label">Confirmed Opens</div>
+    </div>
+    <div class="stat-card stat-rate">
+      <div class="num" id="stat-rate">&mdash;</div>
+      <div class="label">Open Rate</div>
+    </div>
+  </div>
+  <div class="dash-feed">
+    <h2><span class="pulse-dot"></span> Live Event Feed</h2>
+    <div id="feed-list">
+      <div class="feed-empty">Waiting for activity...</div>
+    </div>
+  </div>
+</div><!-- /view-dashboard -->
+
+<div class="ngrok-bar" id="ngrok-bar">
+  <span class="ngrok-dot" id="ngrok-dot"></span>
+  <span id="ngrok-text">Checking ngrok...</span>
+</div>
 
 <script>
+// ── View switching ──
+function switchView(name) {
+  document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelector('.view-tab[onclick*="' + name + '"]').classList.add('active');
+  if (name === 'dashboard' && !_dashStarted) startDashPolling();
+}
+
+// ── Password gate ──
+let _sendUnlocked = false;
+function requirePassword(cb) {
+  if (_sendUnlocked) { cb(); return; }
+  _pendingSendCb = cb;
+  document.getElementById('pw-overlay').classList.remove('hidden');
+  const inp = document.getElementById('pw-input');
+  inp.value = '';
+  document.getElementById('pw-err').textContent = '';
+  setTimeout(() => inp.focus(), 100);
+}
+let _pendingSendCb = null;
+function checkPassword() {
+  const inp = document.getElementById('pw-input');
+  if (inp.value === 'password') {
+    _sendUnlocked = true;
+    document.getElementById('pw-overlay').classList.add('hidden');
+    if (_pendingSendCb) { _pendingSendCb(); _pendingSendCb = null; }
+  } else {
+    document.getElementById('pw-err').textContent = 'sry not for you :)';
+    inp.value = '';
+    inp.focus();
+  }
+}
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('pw-overlay').classList.contains('hidden') && e.key === 'Enter') checkPassword();
+  if (!document.getElementById('pw-overlay').classList.contains('hidden') && e.key === 'Escape') document.getElementById('pw-overlay').classList.add('hidden');
+});
+
+// ── Dashboard polling ──
+let _dashStarted = false;
+let _dashCursor = 0, _dashSends = 0, _dashOpens = 0;
+
+function dashFmtTime(iso) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's ago';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+  return d.toLocaleDateString();
+}
+
+function renderDashEvent(ev) {
+  const isSend = ev.type === 'send';
+  const div = document.createElement('div');
+  div.className = 'dash-event ' + (isSend ? 'ev-send' : 'ev-open');
+  const icon = isSend ? '&#9993;' : '&#128065;';
+  const title = isSend ? 'Sent to ' + ev.to : 'Opened by ' + ev.to;
+  const detail = isSend
+    ? ev.from + ' — "' + ev.subject + '"'
+    : 'from ' + (ev.ip || '?') + ' — "' + ev.subject + '"';
+  div.innerHTML =
+    '<div class="ev-icon">' + icon + '</div>' +
+    '<div class="ev-body"><div class="ev-title">' + title + '</div><div class="ev-detail">' + detail + '</div></div>' +
+    '<div class="ev-time">' + dashFmtTime(ev.time) + '</div>';
+  return div;
+}
+
+function startDashPolling() {
+  _dashStarted = true;
+  async function poll() {
+    try {
+      const r = await fetch('/dashboard/events?since=' + _dashCursor);
+      const d = await r.json();
+      if (d.events.length > 0) {
+        const list = document.getElementById('feed-list');
+        if (_dashCursor === 0 && d.events.length > 0) list.innerHTML = '';
+        d.events.forEach(ev => {
+          if (ev.type === 'send') _dashSends++;
+          if (ev.type === 'open') _dashOpens++;
+          list.insertBefore(renderDashEvent(ev), list.firstChild);
+        });
+        _dashCursor = d.total;
+        document.getElementById('stat-sends').textContent = _dashSends;
+        document.getElementById('stat-opens').textContent = _dashOpens;
+        document.getElementById('stat-rate').textContent =
+          _dashSends > 0 ? Math.round((_dashOpens/_dashSends)*100) + '%' : '\u2014';
+      }
+    } catch(e) {}
+  }
+  poll();
+  setInterval(poll, 3000);
+}
+
+// ── Auto-switch view from URL hash ──
+if (window.location.hash === '#dashboard') switchView('dashboard');
+
 // ── Pipeline state management ──
 const STAGE_IDS = ['preview','preflight','inflight','delivered','opened'];
 const STAGE_TAB_MAP = { preview: 'preview', preflight: 'dns', inflight: 'sendlog', delivered: 'sendlog', opened: 'tracker' };
@@ -1368,6 +1622,13 @@ class SpoofHandler(BaseHTTPRequestHandler):
                         "ip": client_ip,
                         "ua": user_agent
                     })
+                    entry = _track_store[track_id]
+                    with _event_lock:
+                        _event_log.append({
+                            "type": "open", "time": open_time, "track_id": track_id,
+                            "from": entry["from"], "to": entry["to"],
+                            "subject": entry["subject"], "ip": client_ip
+                        })
                     print(f"  📬 Email opened! track_id={track_id} from {client_ip}")
                 else:
                     print(f"  ⚠ Unknown track_id={track_id} from {client_ip}")
@@ -1380,6 +1641,29 @@ class SpoofHandler(BaseHTTPRequestHandler):
             self.send_header("Expires", "0")
             self.end_headers()
             self.wfile.write(TRACKING_GIF)
+            return
+
+        # ── Dashboard page (redirect to unified page with dashboard tab) ──
+        if self.path == "/dashboard":
+            self.send_response(302)
+            self.send_header("Location", "/#dashboard")
+            self.end_headers()
+            return
+
+        # ── Dashboard events API ──
+        if self.path.startswith("/dashboard/events"):
+            qs = self.path.split("?", 1)[1] if "?" in self.path else ""
+            params = parse_qs(qs)
+            since_idx = int(params.get("since", ["0"])[0])
+            with _event_lock:
+                events = _event_log[since_idx:]
+                total = len(_event_log)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.end_headers()
+            self.wfile.write(json.dumps({"events": events, "total": total}).encode())
             return
 
         # ── Status endpoint (ngrok check) ──
@@ -1449,8 +1733,8 @@ class SpoofHandler(BaseHTTPRequestHandler):
 
         if "multipart/form-data" in content_type:
             fields, attachments = _parse_multipart(content_type, raw_body)
-            from_addr     = fields.get("from_addr", "support@rvuwallet.com")
-            envelope_from = fields.get("envelope_from", "bounce@rvuwallet.com")
+            from_addr     = fields.get("from_addr", "")
+            envelope_from = fields.get("envelope_from", "")
             to_addr       = fields.get("to_addr", "")
             subject       = fields.get("subject", "Test")
             body_text     = fields.get("body_text", "")

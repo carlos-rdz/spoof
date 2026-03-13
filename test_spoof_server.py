@@ -258,6 +258,47 @@ def test_ngrok_js():
     check("polls every 15s", "setInterval(checkNgrok, 15000)" in html)
 
 
+def test_view_tabs():
+    print("\n── View tabs (Send / Dashboard) ──")
+    _, _, body = fetch("/")
+    html = body.decode()
+    check("has Send view tab", "switchView('send')" in html)
+    check("has Dashboard view tab", "switchView('dashboard')" in html)
+    check("has view-send panel", 'id="view-send"' in html)
+    check("has view-dashboard panel", 'id="view-dashboard"' in html)
+    check("Send tab active by default", 'view-panel active" id="view-send"' in html)
+    check("Dashboard has stat cards", 'id="stat-sends"' in html)
+    check("Dashboard has feed list", 'id="feed-list"' in html)
+    check("Dashboard has live polling JS", "startDashPolling" in html)
+
+
+def test_password_gate():
+    print("\n── Password gate on send action ──")
+    _, _, body = fetch("/")
+    html = body.decode()
+    check("has password overlay", 'id="pw-overlay"' in html)
+    check("has password input", 'id="pw-input"' in html)
+    check("Send button uses requirePassword", "requirePassword(sendEmail)" in html)
+    check("has checkPassword function", "function checkPassword()" in html)
+    check("password is 'password'", "inp.value === 'password'" in html)
+    check("wrong password shows friendly message", "sry not for you :)" in html)
+    check("overlay hidden by default", 'pw-overlay hidden' in html)
+
+
+def test_dashboard_redirect():
+    print("\n── GET /dashboard (redirect) ──")
+    req = urllib.request.Request(BASE + "/dashboard")
+    try:
+        # Follow redirect manually
+        opener = urllib.request.build_opener(urllib.request.HTTPHandler)
+        resp = opener.open(req)
+        # If it auto-follows, we'd get 200 from the main page
+        check("redirect resolves", resp.status == 200)
+    except urllib.error.HTTPError as e:
+        # 302 without redirect following
+        check("returns 302", e.code == 302)
+
+
 # ── Runner ──
 
 def main():
@@ -284,6 +325,9 @@ def main():
         test_send_nonexistent_domain()
         test_pipeline_states()
         test_ngrok_js()
+        test_view_tabs()
+        test_password_gate()
+        test_dashboard_redirect()
 
     finally:
         stop_server()
