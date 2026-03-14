@@ -8,7 +8,7 @@
 
 <h1 align="center">
   <br>
-  <img width="48" src="https://raw.githubusercontent.com/carlos-rdz/spoof/main/.github/ghost.svg" alt="Spoofy">
+  <img width="48" src="ghost.svg" alt="Spoofy">
   <br>
   Spoofy
   <br>
