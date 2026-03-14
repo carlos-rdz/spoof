@@ -17,7 +17,7 @@
 <p align="center">
   <strong>See how easy it is to spoof an email. Then fix it.</strong>
   <br>
-  <sub>A single-file email security testing tool with DNS analysis, spoofed sends, and open tracking.</sub>
+  <sub>The first vulnerability is rarely the last.</sub>
 </p>
 
 <br>
