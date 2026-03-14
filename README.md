@@ -2,6 +2,8 @@
 
 Email security testing tool. Single-file Python server with a web UI for probing SPF/DKIM/DMARC records and sending test emails via raw SMTP.
 
+![Spoof Demo](demo.gif)
+
 ## What it does
 
 - **DNS analysis** — MX, SPF, DKIM, DMARC record lookups for any domain
@@ -67,6 +69,14 @@ python3 -m pytest test_spoof_server.py -v
 ## Disclaimer
 
 This tool is for **authorized security testing and educational purposes only**. Only test against domains and recipients you have permission to test. Unauthorized email spoofing may violate laws in your jurisdiction.
+
+## Re-recording the demo
+
+```bash
+pip install playwright && playwright install chromium
+python3 demo.py https://your-ngrok-url.ngrok.io
+ffmpeg -i demo.webm -vf 'fps=10,scale=960:-1:flags=lanczos' -loop 0 demo.gif -y
+```
 
 ## License
 
