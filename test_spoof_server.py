@@ -96,21 +96,16 @@ def test_homepage():
     check("has preflight button", "Preflight" in html)
     check("has send button", "Send" in html)
     check("has ngrok bar", 'id="ngrok-bar"' in html)
-    check("has open tracker tab", "Open Tracker" in html)
-    check("has pipeline stage preview", 'id="stage-preview"' in html)
-    check("has pipeline stages", 'id="stage-preflight"' in html)
-    check("has pipeline stage inflight", 'id="stage-inflight"' in html)
-    check("has pipeline stage delivered", 'id="stage-delivered"' in html)
-    check("has pipeline stage opened", 'id="stage-opened"' in html)
-    check("has pipe-track", 'id="pipe-track"' in html)
-    check("has pipe-dot elements", 'class="pipe-dot"' in html)
-    check("has Preview tab", '>Preview</button>' in html)
+    check("has ngrok pill", 'id="ngrok-pill"' in html)
+    check("has state bar", 'id="state-bar"' in html)
+    check("has state steps", 'id="step-0"' in html)
     check("has preview iframe", 'id="preview-iframe-main"' in html)
-    check("has setPipeStage function", "setPipeStage" in html)
-    check("has ngrok JS check", "checkNgrok" in html)
+    check("has DNS section", 'id="sec-dns"' in html)
+    check("has SMTP Log section", 'id="sec-log"' in html)
+    check("has Tracking section", 'id="sec-track"' in html)
+    check("has setState function", "setState" in html)
+    check("has checkNgrok function", "checkNgrok" in html)
     check("has startTrackingPolling", "startTrackingPolling" in html)
-    check("has DNS Records tab", "DNS Records" in html)
-    check("has Send Log tab", "Send Log" in html)
 
 
 def test_status_endpoint():
@@ -229,22 +224,34 @@ def test_send_nonexistent_domain():
           f"log snippet: {data.get('log', '')[:100]}")
 
 
-def test_pipeline_states():
-    """Verify pipeline CSS states exist."""
-    print("\n── Pipeline CSS states ──")
+def test_state_bar():
+    """Verify state bar CSS and JS exist."""
+    print("\n── State bar UI ──")
     _, _, body = fetch("/")
     html = body.decode()
-    check("CSS has .pipe-stage.idle", ".pipe-stage.idle" in html)
-    check("CSS has .pipe-stage.active", ".pipe-stage.active" in html)
-    check("CSS has .pipe-stage.done", ".pipe-stage.done" in html)
-    check("CSS has .pipe-stage.fail", ".pipe-stage.fail" in html)
-    check("CSS has .pipe-stage.glow", ".pipe-stage.glow" in html)
-    check("CSS has .pipe-seg.done", ".pipe-seg.done" in html)
-    check("JS setPipeStage function", "function setPipeStage" in html)
-    check("JS setPipeConn function", "function setPipeConn" in html)
-    check("JS resetPipeline function", "function resetPipeline" in html)
-    check("JS STAGE_TAB_MAP auto-switch", "STAGE_TAB_MAP" in html)
-    check("resetPipeline includes preview", "'preview'" in html)
+    check("CSS has .state-bar", ".state-bar" in html)
+    check("CSS has .state-bar.working", ".state-bar.working" in html)
+    check("CSS has .state-bar.failed", ".state-bar.failed" in html)
+    check("CSS has .state-bar.success", ".state-bar.success" in html)
+    check("CSS has .state-step.done", ".state-step.done" in html)
+    check("CSS has .state-step.active", ".state-step.active" in html)
+    check("JS setState function", "function setState" in html)
+    check("JS resetState function", "function resetState" in html)
+    check("setState called in preflight", "setState('working'" in html)
+    check("setState called in send", "setState('success'" in html)
+
+
+def test_collapsible_sections():
+    """Verify collapsible sections exist."""
+    print("\n── Collapsible sections ──")
+    _, _, body = fetch("/")
+    html = body.decode()
+    check("has toggleSection function", "function toggleSection" in html)
+    check("has section-header click", "onclick=\"toggleSection" in html)
+    check("CSS has .section.open", ".section.open" in html)
+    check("has DNS section header", "DNS &amp; Preflight" in html)
+    check("has SMTP Log section header", "SMTP Log" in html)
+    check("has Open Tracking section header", "Open Tracking" in html)
 
 
 def test_ngrok_js():
@@ -266,23 +273,23 @@ def test_view_tabs():
     check("has Dashboard view tab", "switchView('dashboard')" in html)
     check("has view-send panel", 'id="view-send"' in html)
     check("has view-dashboard panel", 'id="view-dashboard"' in html)
-    check("Send tab active by default", 'view-panel active" id="view-send"' in html)
-    check("Dashboard has stat cards", 'id="stat-sends"' in html)
-    check("Dashboard has feed list", 'id="feed-list"' in html)
-    check("Dashboard has live polling JS", "startDashPolling" in html)
+    check("Send page active by default", 'page active" id="view-send"' in html)
+    check("Dashboard has stat cards", 'id="dash-sent"' in html)
+    check("Dashboard has feed container", 'id="dash-events"' in html)
+    check("Dashboard has live polling JS", "fetchDashEvents" in html)
 
 
 def test_password_gate():
     print("\n── Password gate on send action ──")
     _, _, body = fetch("/")
     html = body.decode()
-    check("has password overlay", 'id="pw-overlay"' in html)
+    check("has password inline form", 'id="pw-inline"' in html)
     check("has password input", 'id="pw-input"' in html)
     check("Send button uses requirePassword", "requirePassword(sendEmail)" in html)
     check("has checkPassword function", "function checkPassword()" in html)
-    check("password is 'password'", "inp.value === 'password'" in html)
+    check("password check logic", "inp.value === 'password'" in html)
     check("wrong password shows friendly message", "sry not for you :)" in html)
-    check("overlay hidden by default", 'pw-overlay hidden' in html)
+    check("password form hidden by default", 'class="pw-inline"' in html)
 
 
 def test_dashboard_redirect():
@@ -323,7 +330,8 @@ def main():
         test_tracking_pixel_records_open()
         test_send_no_recipient()
         test_send_nonexistent_domain()
-        test_pipeline_states()
+        test_state_bar()
+        test_collapsible_sections()
         test_ngrok_js()
         test_view_tabs()
         test_password_gate()

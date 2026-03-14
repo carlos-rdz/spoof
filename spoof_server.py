@@ -505,771 +505,508 @@ HTML_PAGE = r"""<!DOCTYPE html>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: #0f172a; color: #e2e8f0; min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center; padding: 1.2rem;
+    background: #f8faf8; color: #1a1a1a; min-height: 100vh;
   }
-  h1 { font-size: 1.3rem; margin-bottom: .2rem; }
-  .subtitle { color: #94a3b8; font-size: .82rem; margin-bottom: 1rem; }
-  .warning-banner {
-    background: #7f1d1d33; border: 1px solid #991b1b55; border-radius: 8px;
-    padding: .5rem .8rem; margin-bottom: .6rem; max-width: 1200px; width: 100%;
-    font-size: .72rem; color: #fca5a5; text-align: center;
-  }
-  /* ── Top-level view tabs ── */
-  .view-tabs {
-    display: flex; gap: .3rem; margin-bottom: .8rem; max-width: 1200px; width: 100%;
-  }
-  .view-tab {
-    padding: .45rem 1.2rem; border: 1px solid #334155; border-radius: 8px;
-    background: transparent; color: #64748b; font-size: .78rem; font-weight: 600;
-    cursor: pointer; transition: all .15s;
-  }
-  .view-tab:hover { border-color: #475569; color: #94a3b8; }
-  .view-tab.active { background: #334155; color: #e2e8f0; border-color: #475569; }
-  .view-panel { display: none; width: 100%; }
-  .view-panel.active { display: block; }
 
-  /* ── Password modal ── */
-  .pw-overlay {
-    position: fixed; inset: 0; background: #0f172aee; z-index: 100;
-    display: flex; align-items: center; justify-content: center;
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .6rem 1.5rem; border-bottom: 1px solid #e0e8e0;
+    background: #fff;
   }
-  .pw-overlay.hidden { display: none; }
-  .pw-box {
-    background: #1e293b; border: 1px solid #334155; border-radius: 12px;
-    padding: 1.5rem 2rem; text-align: center; max-width: 340px; width: 90%;
+  .topbar-left { display: flex; align-items: center; gap: 1rem; }
+  .brand { font-size: .85rem; font-weight: 700; color: #166534; }
+  .tabs { display: flex; }
+  .tab {
+    padding: .4rem .8rem; font-size: .72rem; color: #888;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    background: none; border-top: none; border-left: none; border-right: none;
+    font-family: inherit;
   }
-  .pw-box h3 { font-size: .9rem; margin-bottom: .6rem; color: #e2e8f0; }
-  .pw-box input {
-    width: 100%; background: #0f172a; border: 1px solid #334155;
-    border-radius: 6px; padding: .45rem .6rem; color: #e2e8f0;
-    font-size: .8rem; text-align: center; margin-bottom: .5rem;
+  .tab:hover { color: #555; }
+  .tab.active { color: #166534; border-bottom-color: #22c55e; }
+  .status-pill {
+    font-size: .6rem; padding: .2rem .5rem; border-radius: 100px;
+    background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+    cursor: default;
   }
-  .pw-box input:focus { outline: none; border-color: #3b82f6; }
-  .pw-box .pw-err { color: #f87171; font-size: .65rem; min-height: .9rem; }
-  .pw-box button {
-    padding: .4rem 1.5rem; border: none; border-radius: 6px;
-    background: #3b82f6; color: white; font-size: .75rem; font-weight: 600;
-    cursor: pointer; margin-top: .3rem;
+  .status-pill.off { background: #fef9ee; color: #a16207; border-color: #fde68a; }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 1.5rem; display: none; }
+  .page.active { display: block; }
+
+  /* State bar */
+  .state-bar {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .6rem .8rem; border-radius: 8px; margin-bottom: 1.2rem;
+    background: #f9fafb; border: 1px solid #e5e7eb;
+    font-size: .72rem; color: #9ca3af;
   }
-  .pw-box button:hover { background: #2563eb; }
+  .state-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #d1d5db;
+  }
+  .state-bar.ready { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .state-bar.ready .state-dot { background: #22c55e; }
+  .state-bar.working { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+  .state-bar.working .state-dot { background: #3b82f6; animation: pulse 1.5s infinite; }
+  .state-bar.failed { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+  .state-bar.failed .state-dot { background: #ef4444; }
+  .state-bar.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+  .state-bar.success .state-dot { background: #22c55e; }
+  .state-steps {
+    margin-left: auto; display: flex; gap: 2px; align-items: center;
+  }
+  .state-step { width: 24px; height: 3px; border-radius: 2px; background: #e0e8e0; }
+  .state-step.done { background: #22c55e; }
+  .state-step.active { background: #3b82f6; }
+  .state-step.fail { background: #ef4444; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  /* Form */
+  .form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .8rem;
+    margin-bottom: .8rem;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .field label {
+    display: block; font-size: .62rem; font-weight: 600; color: #6b7280;
+    margin-bottom: .25rem; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .field input, .field textarea {
+    width: 100%; background: #fff; border: 1px solid #d1d9d1;
+    border-radius: 6px; padding: .5rem .6rem; color: #1a1a1a;
+    font-size: .78rem; font-family: inherit;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px #22c55e15; }
+  .field input::placeholder, .field textarea::placeholder { color: #b0b8b0; }
+  .field textarea { resize: vertical; min-height: 48px; font-family: 'SF Mono', Menlo, monospace; font-size: .7rem; }
+
+  .toggle-row {
+    display: flex; align-items: center; gap: .35rem; font-size: .68rem; color: #6b7280;
+    margin-bottom: .6rem;
+  }
+  .toggle-row input { accent-color: #22c55e; }
+
+  /* Preview iframe */
+  .preview-frame {
+    width: 100%; height: 140px; border: 1px solid #e0e8e0; border-radius: 6px;
+    background: #fff; margin-bottom: .8rem;
+  }
+
+  .actions { display: flex; gap: .5rem; margin-bottom: 1.2rem; }
+  .btn {
+    padding: .55rem 1.2rem; border-radius: 6px; font-size: .75rem; font-weight: 600;
+    cursor: pointer; font-family: inherit; border: 1px solid;
+  }
+  .btn-secondary { background: #fff; border-color: #d1d9d1; color: #555; }
+  .btn-secondary:hover { background: #f0fdf4; border-color: #86efac; color: #166534; }
+  .btn-primary { background: #22c55e; border-color: #22c55e; color: #fff; }
+  .btn-primary:hover { background: #16a34a; border-color: #16a34a; }
+  .btn.sending { opacity: .6; pointer-events: none; }
+  .btn.success { background: #16a34a; border-color: #16a34a; }
+
+  /* Password inline */
+  .pw-inline { display: none; align-items: center; gap: .4rem; margin-bottom: 1.2rem; }
+  .pw-inline.show { display: flex; }
+  .pw-inline input {
+    background: #fff; border: 1px solid #d1d9d1; border-radius: 6px;
+    padding: .45rem .6rem; font-size: .75rem; width: 160px; font-family: inherit;
+  }
+  .pw-inline input:focus { outline: none; border-color: #22c55e; }
+  .pw-inline button {
+    padding: .45rem .8rem; border: none; border-radius: 6px;
+    background: #22c55e; color: #fff; font-size: .7rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .pw-inline button:hover { background: #16a34a; }
+  .pw-err { color: #dc2626; font-size: .6rem; min-height: .8rem; }
+
+  /* Collapsible sections */
+  .section {
+    border: 1px solid #e0e8e0; border-radius: 8px; overflow: hidden;
+    margin-bottom: .8rem; background: #fff;
+  }
+  .section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .5rem .7rem; background: #fafcfa; cursor: pointer;
+    font-size: .68rem; font-weight: 600; color: #374151;
+    user-select: none;
+  }
+  .section-header:hover { background: #f0fdf4; }
+  .section-header .arrow { transition: transform .2s; font-size: .5rem; color: #9ca3af; margin-right: .4rem; }
+  .section.open .section-header .arrow { transform: rotate(90deg); }
+  .section-badges { display: flex; gap: .3rem; }
+  .section-badge {
+    font-size: .55rem; padding: .12rem .4rem; border-radius: 100px; font-weight: 700;
+  }
+  .badge-ok { background: #dcfce7; color: #15803d; }
+  .badge-warn { background: #fef3c7; color: #a16207; }
+  .badge-fail { background: #fee2e2; color: #dc2626; }
+  .badge-info { background: #dbeafe; color: #1d4ed8; }
+  .badge-none { background: #f3f4f6; color: #6b7280; }
+  .section-body {
+    display: none;
+    padding: .7rem; font-family: 'SF Mono', Menlo, monospace; font-size: .65rem;
+    line-height: 1.6; color: #6b7280; border-top: 1px solid #e0e8e0;
+    max-height: 280px; overflow-y: auto;
+  }
+  .section.open .section-body { display: block; }
+  .section-body .g { color: #16a34a; }
+  .section-body .b { color: #2563eb; }
+  .section-body .r { color: #dc2626; }
+  .section-body .y { color: #ca8a04; }
+  .section-body .d { color: #c0c8c0; }
+
+  .dns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-family: inherit; }
+  .dns-card {
+    background: #fafcfa; border: 1px solid #e8f0e8; border-radius: 6px; padding: .5rem;
+  }
+  .dns-card h4 {
+    font-size: .6rem; color: #6b7280; text-transform: uppercase; letter-spacing: .04em;
+    margin-bottom: .3rem; display: flex; justify-content: space-between;
+  }
+  .dns-card p { font-size: .65rem; color: #555; line-height: 1.4; word-break: break-all; }
+  .dns-card code { font-size: .6rem; background: #f0f4f0; padding: .08rem .2rem; border-radius: 3px; color: #1a1a1a; }
+
+  /* Probe steps */
+  .probe-steps { display: flex; gap: .3rem; margin-bottom: .6rem; flex-wrap: wrap; }
+  .probe-step {
+    display: flex; align-items: center; gap: .3rem;
+    padding: .25rem .5rem; border-radius: 6px; font-size: .6rem;
+    background: #f3f4f6; color: #6b7280; font-family: inherit;
+  }
+  .probe-step.ok { background: #dcfce7; color: #15803d; }
+  .probe-step.fail { background: #fee2e2; color: #dc2626; }
+  .probe-step.warn { background: #fef3c7; color: #a16207; }
+  .probe-step .label { font-weight: 600; }
+  .probe-step .status { font-family: 'SF Mono', Menlo, monospace; }
+
+  .pf-badge { font-size: .5rem; padding: .1rem .3rem; border-radius: 100px; font-weight: 700; vertical-align: middle; }
+  .pf-badge.pass { background: #dcfce7; color: #15803d; }
+  .pf-badge.warn { background: #fef3c7; color: #a16207; }
+  .pf-badge.fail { background: #fee2e2; color: #dc2626; }
+  .pf-badge.info { background: #dbeafe; color: #1d4ed8; }
+  .pf-badge.none { background: #f3f4f6; color: #6b7280; }
+
+  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .pf-card {
+    background: #fafcfa; border: 1px solid #e8f0e8; border-radius: 6px; padding: .5rem;
+  }
+  .pf-card h3 { font-size: .62rem; margin-bottom: .2rem; }
+  .pf-card p { font-size: .6rem; color: #555; line-height: 1.4; word-break: break-all; }
+  .pf-card code { font-size: .58rem; background: #f0f4f0; padding: .08rem .2rem; border-radius: 3px; color: #1a1a1a; }
+
+  .log-output {
+    font-family: 'SF Mono', Menlo, monospace; font-size: .65rem;
+    line-height: 1.6; white-space: pre-wrap; color: #6b7280;
+  }
+  .log-output .header { color: #1d4ed8; font-weight: 600; }
+  .log-output .success { color: #16a34a; }
+  .log-output .error { color: #dc2626; }
+  .log-output .warn { color: #ca8a04; }
+
+  .pf-placeholder { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: .75rem; font-family: inherit; }
+
+  /* Tracker events */
+  .open-event {
+    display: flex; align-items: center; gap: .5rem; padding: .35rem 0;
+    border-bottom: 1px solid #f0f4f0; font-size: .7rem;
+  }
+  .open-event:last-child { border-bottom: none; }
+  .open-event .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; flex-shrink: 0; }
+  .open-event.waiting .dot { background: #d1d5db; animation: none; }
+  .open-event .time { color: #16a34a; font-family: 'SF Mono', Menlo, monospace; font-size: .65rem; min-width: 60px; }
+  .open-event.waiting .time { color: #9ca3af; }
+  .open-event .detail { color: #6b7280; }
+
+  /* File attachments */
+  .file-drop { border: 1px dashed #d1d9d1; border-radius: 6px; padding: .5rem; text-align: center; font-size: .65rem; color: #9ca3af; cursor: pointer; margin-bottom: .6rem; }
+  .file-drop:hover { border-color: #86efac; background: #f0fdf4; }
+  .file-item { display: flex; justify-content: space-between; align-items: center; padding: .25rem .4rem; font-size: .65rem; color: #555; background: #f9fafb; border-radius: 4px; margin-top: .3rem; }
+  .file-item .remove { cursor: pointer; color: #dc2626; font-size: .6rem; }
 
   /* ── Dashboard styles ── */
   .dash-stats {
-    display: flex; gap: 1.5rem; margin-bottom: 1.5rem;
-    flex-wrap: wrap; justify-content: center;
+    display: flex; gap: 1rem; margin-bottom: 1.5rem;
   }
   .stat-card {
-    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-    padding: 1rem 1.5rem; min-width: 140px; text-align: center;
+    flex: 1; background: #fff; border: 1px solid #e0e8e0; border-radius: 8px;
+    padding: 1rem; text-align: center;
   }
   .stat-card .num {
-    font-size: 2rem; font-weight: 700;
+    font-size: 1.8rem; font-weight: 700;
     font-family: 'SF Mono', Menlo, monospace;
   }
-  .stat-card .label { font-size: .7rem; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-top: .2rem; }
-  .stat-sends .num { color: #60a5fa; }
-  .stat-opens .num { color: #4ade80; }
-  .stat-rate .num { color: #fbbf24; }
-  .dash-feed { max-width: 700px; width: 100%; margin: 0 auto; }
+  .stat-card .label { font-size: .62rem; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin-top: .2rem; }
+  .stat-sends .num { color: #166534; }
+  .stat-opens .num { color: #22c55e; }
+  .stat-rate .num { color: #a16207; }
+
   .dash-feed h2 {
-    font-size: .75rem; color: #64748b; text-transform: uppercase;
-    letter-spacing: .05em; margin-bottom: .8rem;
-    padding-bottom: .4rem; border-bottom: 1px solid #1e293b;
+    font-size: .65rem; color: #9ca3af; text-transform: uppercase;
+    letter-spacing: .06em; margin-bottom: .8rem;
+    padding-bottom: .4rem; border-bottom: 1px solid #e0e8e0;
   }
   .feed-empty {
-    text-align: center; padding: 3rem 1rem; color: #475569; font-size: .85rem;
+    text-align: center; padding: 3rem 1rem; color: #9ca3af; font-size: .8rem;
   }
   .dash-event {
     display: flex; align-items: flex-start; gap: .8rem;
-    padding: .7rem .8rem; border-radius: 8px;
-    margin-bottom: .4rem; transition: background .2s;
-    animation: slideIn .3s ease-out;
+    padding: .6rem .5rem; border-radius: 8px;
+    margin-bottom: .3rem; animation: slideIn .3s ease-out;
   }
-  .dash-event:hover { background: #1e293b; }
+  .dash-event:hover { background: #f0fdf4; }
   @keyframes slideIn {
     from { opacity: 0; transform: translateY(-8px); }
     to { opacity: 1; transform: translateY(0); }
   }
   .ev-icon {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 28px; height: 28px; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: .85rem;
+    flex-shrink: 0; font-size: .75rem;
   }
-  .ev-send .ev-icon { background: #1e3a5f; }
-  .ev-open .ev-icon { background: #14532d; }
+  .ev-send .ev-icon { background: #dbeafe; }
+  .ev-open .ev-icon { background: #dcfce7; }
   .ev-body { flex: 1; min-width: 0; }
-  .ev-title { font-size: .8rem; font-weight: 600; margin-bottom: .15rem; }
-  .ev-send .ev-title { color: #93c5fd; }
-  .ev-open .ev-title { color: #86efac; }
+  .ev-title { font-size: .75rem; font-weight: 500; margin-bottom: .1rem; color: #1a1a1a; }
   .ev-detail {
-    font-size: .7rem; color: #64748b;
+    font-size: .65rem; color: #9ca3af;
     font-family: 'SF Mono', Menlo, monospace;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .ev-time {
-    font-size: .6rem; color: #475569; flex-shrink: 0;
+    font-size: .55rem; color: #b0b8b0; flex-shrink: 0;
     font-family: 'SF Mono', Menlo, monospace;
   }
-  .pulse-dot {
-    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-    background: #4ade80; margin-right: 6px; vertical-align: middle;
-    animation: pulse 1.5s infinite;
-  }
-  .ngrok-bar {
-    display: flex; align-items: center; gap: .4rem; max-width: 1200px; width: 100%;
-    padding: .3rem .8rem; border-radius: 6px;
-    font-size: .6rem; font-family: 'SF Mono', Menlo, monospace;
-    background: transparent; border: none; color: #475569;
-    position: fixed; bottom: .5rem; left: 50%; transform: translateX(-50%);
-    justify-content: center; opacity: .7;
-  }
-  .ngrok-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-  .ngrok-bar.connected { border-color: #4ade8055; background: #14532d22; }
-  .ngrok-bar.connected .ngrok-dot { background: #4ade80; animation: pulse 1.5s infinite; }
-  .ngrok-bar.disconnected { border-color: #f59e0b33; background: #78350f11; }
-  .ngrok-bar.disconnected .ngrok-dot { background: #f59e0b; }
-  .ngrok-bar a { color: #60a5fa; text-decoration: none; }
 
-  .layout { display: grid; grid-template-columns: 320px 1fr; gap: 1rem; max-width: 1200px; width: 100%; }
-
-  .panel {
-    background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 1rem;
+  /* Ngrok footer */
+  .ngrok-footer {
+    text-align: center; padding: .5rem; font-size: .55rem; color: #b0b8b0;
   }
-  .panel h2 {
-    font-size: .72rem; color: #94a3b8; text-transform: uppercase;
-    letter-spacing: .05em; margin-bottom: .7rem;
-    padding-bottom: .35rem; border-bottom: 1px solid #334155;
-  }
-
-  .field { margin-bottom: .55rem; }
-  .field label {
-    display: block; font-size: .6rem; font-weight: 600; color: #64748b;
-    margin-bottom: .15rem; text-transform: uppercase; letter-spacing: .03em;
-  }
-  .field input, .field textarea {
-    width: 100%; background: #0f172a; border: 1px solid #334155;
-    border-radius: 5px; padding: .35rem .5rem; color: #e2e8f0;
-    font-size: .75rem; font-family: 'SF Mono', Menlo, monospace;
-  }
-  .field input:focus, .field textarea:focus { outline: none; border-color: #3b82f6; }
-  .field textarea { resize: vertical; min-height: 50px; }
-  .field .hint { font-size: .55rem; color: #475569; margin-top: .1rem; }
-
-  .toggle-row {
-    display: flex; align-items: center; gap: .3rem;
-    margin-bottom: .4rem; font-size: .68rem; color: #94a3b8;
-  }
-  .toggle-row input[type="checkbox"] { width: 13px; height: 13px; accent-color: #3b82f6; }
-
-  .attachments-area {
-    border: 1px dashed #334155; border-radius: 6px; padding: .45rem;
-    text-align: center; cursor: pointer; font-size: .68rem; color: #64748b;
-  }
-  .attachments-area:hover { border-color: #3b82f6; }
-  .attachments-area input { display: none; }
-  .file-list { font-size: .65rem; color: #94a3b8; margin-top: .2rem; }
-  .file-item {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #0f172a; padding: .15rem .35rem; border-radius: 3px; margin-top: .15rem;
-  }
-  .file-item .remove { color: #ef4444; cursor: pointer; font-weight: bold; }
-
-  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-top: .5rem; }
-  .btn {
-    padding: .5rem; border: none; border-radius: 6px;
-    font-size: .75rem; font-weight: 700; cursor: pointer; transition: all .2s;
-  }
-  .btn-probe { background: #1e40af; color: #93c5fd; }
-  .btn-probe:hover { background: #1d4ed8; }
-  .btn-send { background: linear-gradient(135deg, #dc2626, #991b1b); color: white; }
-  .btn-send:hover { box-shadow: 0 3px 10px #dc262644; }
-  .btn.sending { background: #475569; color: #94a3b8; cursor: not-allowed; }
-  .btn.success { background: #16a34a; color: white; }
-
-  .preview-frame { display: none; margin-top: .2rem; background: white; border-radius: 5px; overflow: hidden; }
-  .preview-frame.show { display: block; }
-  .preview-frame iframe { width: 100%; height: 180px; border: none; }
-
-  /* ── Right Panel ── */
-  .right-panel { display: flex; flex-direction: column; gap: .6rem; }
-
-  /* ── Pipeline (stepper) ── */
-  .pipeline {
-    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-    padding: 1rem 1.2rem .7rem;
-  }
-  .pipe-track {
-    display: flex; align-items: flex-start; position: relative;
-    padding: 0 8px;
-  }
-  /* The continuous background rail */
-  .pipe-track::before {
-    content: ''; position: absolute; top: 14px; left: 28px; right: 28px;
-    height: 2px; background: #1e293b; z-index: 0;
-  }
-  .pipe-stage {
-    flex: 1; display: flex; flex-direction: column; align-items: center;
-    position: relative; z-index: 1;
-  }
-  .pipe-dot {
-    width: 28px; height: 28px; border-radius: 50%;
-    border: 2px solid #334155; background: #0f172a;
-    display: flex; align-items: center; justify-content: center;
-    transition: all .35s cubic-bezier(.4,0,.2,1);
-    position: relative;
-  }
-  .pipe-dot svg { width: 14px; height: 14px; opacity: 0; transition: opacity .3s; }
-  .pipe-dot .dot-num {
-    font-size: .6rem; font-weight: 700; color: #475569;
-    transition: opacity .3s;
-    position: absolute;
-  }
-  .pipe-label {
-    font-size: .55rem; font-weight: 600; color: #475569; margin-top: .35rem;
-    text-transform: uppercase; letter-spacing: .04em; transition: color .35s;
-    white-space: nowrap;
-  }
-  .pipe-detail {
-    font-size: .5rem; color: #475569; margin-top: .1rem; transition: color .35s;
-    font-family: 'SF Mono', Menlo, monospace; min-height: .65rem;
-  }
-  /* Segment fills between dots */
-  .pipe-seg {
-    position: absolute; top: 14px; height: 2px; z-index: 0;
-    background: #334155; transition: background .5s cubic-bezier(.4,0,.2,1);
-  }
-
-  /* ── States ── */
-  .pipe-stage.idle .pipe-dot { border-color: #334155; }
-  .pipe-stage.idle .pipe-dot .dot-num { opacity: 1; }
-
-  .pipe-stage.active .pipe-dot {
-    border-color: #3b82f6; background: #172554;
-    box-shadow: 0 0 0 4px #3b82f618;
-    animation: stepPulse 2s cubic-bezier(.4,0,.6,1) infinite;
-  }
-  .pipe-stage.active .pipe-dot .dot-num { opacity: 0; }
-  .pipe-stage.active .pipe-dot svg.spin-icon { opacity: 1; }
-  .pipe-stage.active .pipe-label { color: #93c5fd; }
-  .pipe-stage.active .pipe-detail { color: #60a5fa; }
-
-  .pipe-stage.done .pipe-dot {
-    border-color: #22c55e; background: #14532d;
-    box-shadow: 0 0 0 3px #22c55e12;
-  }
-  .pipe-stage.done .pipe-dot .dot-num { opacity: 0; }
-  .pipe-stage.done .pipe-dot svg.check-icon { opacity: 1; }
-  .pipe-stage.done .pipe-label { color: #86efac; }
-  .pipe-stage.done .pipe-detail { color: #4ade80; }
-
-  .pipe-stage.fail .pipe-dot {
-    border-color: #ef4444; background: #450a0a;
-    box-shadow: 0 0 0 3px #ef444418;
-  }
-  .pipe-stage.fail .pipe-dot .dot-num { opacity: 0; }
-  .pipe-stage.fail .pipe-dot svg.x-icon { opacity: 1; }
-  .pipe-stage.fail .pipe-label { color: #fca5a5; }
-  .pipe-stage.fail .pipe-detail { color: #f87171; }
-
-  .pipe-stage.glow .pipe-dot {
-    border-color: #22c55e; background: #14532d;
-    box-shadow: 0 0 0 4px #22c55e20, 0 0 16px #22c55e28;
-    animation: stepGlow 2.5s ease infinite;
-  }
-  .pipe-stage.glow .pipe-dot .dot-num { opacity: 0; }
-  .pipe-stage.glow .pipe-dot svg.check-icon { opacity: 1; }
-  .pipe-stage.glow .pipe-label { color: #4ade80; }
-  .pipe-stage.glow .pipe-detail { color: #86efac; }
-
-  .pipe-seg.done { background: #22c55e; box-shadow: 0 0 4px #22c55e33; }
-  .pipe-seg.active { background: linear-gradient(90deg, #22c55e, #3b82f6); }
-  .pipe-seg.fail { background: #ef4444; }
-
-  @keyframes stepPulse {
-    0%, 100% { box-shadow: 0 0 0 4px #3b82f618; }
-    50% { box-shadow: 0 0 0 8px #3b82f610; }
-  }
-  @keyframes stepGlow {
-    0%, 100% { box-shadow: 0 0 0 4px #22c55e20, 0 0 12px #22c55e18; }
-    50% { box-shadow: 0 0 0 6px #22c55e28, 0 0 20px #22c55e30; }
-  }
-  @keyframes stepSpin {
-    to { transform: rotate(360deg); }
-  }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-
-  /* ── Detail Tabs ── */
-  .detail-panel {
-    background: #1e293b; border: 1px solid #334155; border-radius: 10px;
-    padding: .8rem 1rem; flex: 1; display: flex; flex-direction: column;
-  }
-  .tab-bar { display: flex; gap: .3rem; margin-bottom: .5rem; }
-  .tab-btn {
-    padding: .3rem .7rem; border: 1px solid #334155; border-radius: 6px;
-    background: transparent; color: #64748b; font-size: .68rem; font-weight: 600;
-    cursor: pointer; transition: all .15s;
-  }
-  .tab-btn:hover { border-color: #475569; color: #94a3b8; }
-  .tab-btn.active { background: #334155; color: #e2e8f0; border-color: #475569; }
-  .tab-content { display: none; flex: 1; }
-  .tab-content.active { display: flex; flex-direction: column; }
-
-  /* DNS cards */
-  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; margin-bottom: .4rem; }
-  .pf-card {
-    background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; padding: .5rem;
-  }
-  .pf-card h3 {
-    font-size: .62rem; text-transform: uppercase; letter-spacing: .04em;
-    margin-bottom: .2rem; display: flex; justify-content: space-between; align-items: center;
-  }
-  .pf-card p { font-size: .65rem; color: #94a3b8; line-height: 1.3; word-break: break-all; }
-  .pf-card code { font-size: .6rem; background: #1e293b; padding: .08rem .25rem; border-radius: 3px; color: #e2e8f0; }
-  .pf-badge { font-size: .5rem; padding: .08rem .3rem; border-radius: 3px; font-weight: 700; }
-  .pf-badge.pass { background: #14532d; color: #4ade80; }
-  .pf-badge.fail { background: #7f1d1d; color: #fca5a5; }
-  .pf-badge.warn { background: #78350f; color: #fbbf24; }
-  .pf-badge.info { background: #1e3a5f; color: #60a5fa; }
-  .pf-badge.none { background: #334155; color: #94a3b8; }
-
-  .probe-steps {
-    display: grid; grid-template-columns: repeat(5, 1fr); gap: .25rem; margin-bottom: .4rem;
-  }
-  .probe-step {
-    background: #0f172a; border-radius: 4px; padding: .25rem .2rem;
-    text-align: center; font-size: .55rem; border: 1px solid #1e293b;
-  }
-  .probe-step .label { color: #64748b; display: block; margin-bottom: .1rem; }
-  .probe-step.ok .status { color: #4ade80; }
-  .probe-step.fail .status { color: #f87171; }
-  .probe-step.warn .status { color: #fbbf24; }
-  .probe-step.pending .status { color: #475569; }
-
-  /* Log output */
-  .log-output {
-    background: #0f172a; border: 1px solid #1e293b; border-radius: 6px;
-    padding: .5rem; font-family: 'SF Mono', Menlo, monospace;
-    font-size: .6rem; line-height: 1.45; color: #94a3b8;
-    flex: 1; min-height: 150px; max-height: 400px; overflow-y: auto;
-    white-space: pre-wrap; word-break: break-all;
-  }
-  .log-output .success { color: #4ade80; font-weight: bold; }
-  .log-output .error { color: #f87171; }
-  .log-output .warn { color: #fbbf24; }
-  .log-output .info { color: #60a5fa; }
-  .log-output .header { color: #c084fc; font-weight: bold; }
-
-  /* Open tracker */
-  .open-tracker h4 { color: #94a3b8; font-size: .62rem; text-transform: uppercase; margin-bottom: .3rem; }
-  .open-event {
-    display: flex; align-items: center; gap: .4rem; padding: .2rem 0;
-    border-bottom: 1px solid #1e293b; font-family: 'SF Mono', Menlo, monospace; font-size: .65rem;
-  }
-  .open-event .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: pulse 1.5s infinite; }
-  .open-event .time { color: #4ade80; }
-  .open-event .detail { color: #94a3b8; }
-  .open-event.waiting .dot { background: #475569; animation: none; }
-  .open-event.waiting .time { color: #475569; }
-  .open-event.waiting .detail { color: #475569; }
-
-  .pf-placeholder {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 120px; color: #334155; font-size: .8rem;
-  }
-
-  @media (max-width: 800px) {
-    .layout { grid-template-columns: 1fr; }
-    .pf-grid { grid-template-columns: 1fr; }
-    .probe-steps { grid-template-columns: repeat(3, 1fr); }
-    .pipe-dot { width: 24px; height: 24px; }
-    .pipe-dot svg { width: 12px; height: 12px; }
-  }
+  .ngrok-footer a { color: #22c55e; }
 </style>
 </head>
 <body>
-<h1>Spoof</h1>
-<p class="subtitle">Preflight check + live send — test your domain's DMARC / SPF</p>
-<div class="warning-banner">For security testing of domains you own only ;)</div>
-<div class="view-tabs">
-  <button class="view-tab active" onclick="switchView('send')">Send</button>
-  <button class="view-tab" onclick="switchView('dashboard')">Dashboard</button>
-</div>
 
-<!-- Password modal for send action -->
-<div class="pw-overlay hidden" id="pw-overlay">
-  <div class="pw-box">
-    <h3>Enter Password</h3>
-    <input type="password" id="pw-input" placeholder="Password" autocomplete="off">
-    <div class="pw-err" id="pw-err"></div>
-    <button onclick="checkPassword()">Unlock</button>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand">Spoof</div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchView('send')">Send</button>
+      <button class="tab" onclick="switchView('dashboard')">Dashboard</button>
+    </div>
   </div>
+  <div class="status-pill off" id="ngrok-pill">ngrok disconnected</div>
 </div>
 
-<div class="view-panel active" id="view-send">
-<div class="layout">
-  <!-- LEFT: Form -->
-  <div class="panel">
-    <h2>Compose</h2>
+<!-- ── Send View ── -->
+<div class="page active" id="view-send">
+  <div class="state-bar" id="state-bar">
+    <div class="state-dot"></div>
+    <span id="state-text">Ready to send</span>
+    <div class="state-steps">
+      <div class="state-step" id="step-0"></div>
+      <div class="state-step" id="step-1"></div>
+      <div class="state-step" id="step-2"></div>
+      <div class="state-step" id="step-3"></div>
+      <div class="state-step" id="step-4"></div>
+    </div>
+  </div>
+
+  <div class="form-grid">
     <div class="field">
       <label>From (spoofed)</label>
-      <input type="text" id="from_addr" value="" placeholder="sender@example.com">
-      <div class="hint">What the recipient sees</div>
+      <input id="from_addr" placeholder="sender@example.com">
     </div>
     <div class="field">
       <label>Envelope / Return-Path</label>
-      <input type="text" id="envelope_from" value="" placeholder="bounce@example.com">
-      <div class="hint">Used for SPF &amp; bounces (hidden from user)</div>
+      <input id="envelope_from" placeholder="bounce@example.com">
     </div>
     <div class="field">
       <label>To</label>
-      <input type="email" id="to_addr" value="" placeholder="user@recipient.com" required>
+      <input id="to_addr" placeholder="user@recipient.com">
     </div>
     <div class="field">
       <label>Subject</label>
-      <input type="text" id="subject" value="" placeholder="Subject line">
+      <input id="subject" placeholder="Subject line">
     </div>
-    <div class="field">
+    <div class="field full">
       <label>Body (text)</label>
-      <textarea id="body_text" rows="2" placeholder="Plain text body"></textarea>
-    </div>
-    <div class="toggle-row">
-      <input type="checkbox" id="use_html" checked>
-      <label for="use_html">Include HTML body</label>
-    </div>
-    <div class="field" id="html-field">
-      <label>Body (HTML)</label>
-      <textarea id="body_html" rows="2"><div style="font-family:Arial;max-width:600px;margin:0 auto;padding:20px"><h2 style="color:#333">Hello</h2><p style="color:#555">This is the HTML body. Edit to see the preview update live.</p></div></textarea>
-    </div>
-    <div class="field">
-      <label>Attachments</label>
-      <div class="attachments-area" onclick="document.getElementById('file-input').click()">
-        <input type="file" id="file-input" multiple onchange="handleFiles(this.files)">
-        Click or drag to attach
-      </div>
-      <div class="file-list" id="file-list"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-probe" id="probe-btn" onclick="runPreflight()">Preflight</button>
-      <button class="btn btn-send" id="send-btn" onclick="requirePassword(sendEmail)">Send</button>
+      <input id="body_text" placeholder="Plain text fallback">
     </div>
   </div>
 
-  <!-- RIGHT: Pipeline + Details -->
-  <div class="right-panel">
-    <!-- Pipeline stepper -->
-    <div class="pipeline">
-      <div class="pipe-track" id="pipe-track">
-        <div class="pipe-stage idle" id="stage-preview">
-          <div class="pipe-dot">
-            <span class="dot-num">0</span>
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" style="animation:stepSpin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10" /></svg>
-            <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div class="pipe-label">Preview</div>
-          <div class="pipe-detail" id="stage-preview-detail"></div>
-        </div>
-        <div class="pipe-stage idle" id="stage-preflight">
-          <div class="pipe-dot">
-            <span class="dot-num">1</span>
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" style="animation:stepSpin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10" /></svg>
-            <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div class="pipe-label">Preflight</div>
-          <div class="pipe-detail" id="stage-preflight-detail"></div>
-        </div>
-        <div class="pipe-stage idle" id="stage-inflight">
-          <div class="pipe-dot">
-            <span class="dot-num">2</span>
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" style="animation:stepSpin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10" /></svg>
-            <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div class="pipe-label">In Flight</div>
-          <div class="pipe-detail" id="stage-inflight-detail"></div>
-        </div>
-        <div class="pipe-stage idle" id="stage-delivered">
-          <div class="pipe-dot">
-            <span class="dot-num">3</span>
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" style="animation:stepSpin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10" /></svg>
-            <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div class="pipe-label">Delivered</div>
-          <div class="pipe-detail" id="stage-delivered-detail"></div>
-        </div>
-        <div class="pipe-stage idle" id="stage-opened">
-          <div class="pipe-dot">
-            <span class="dot-num">4</span>
-            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <svg class="spin-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linecap="round" style="animation:stepSpin .8s linear infinite"><path d="M12 2a10 10 0 0 1 10 10" /></svg>
-            <svg class="x-icon" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-          <div class="pipe-label">Opened</div>
-          <div class="pipe-detail" id="stage-opened-detail"></div>
-        </div>
-      </div>
+  <div class="toggle-row">
+    <input type="checkbox" id="use_html" checked> Include HTML body
+  </div>
+  <div class="field full" id="html-field" style="margin-bottom: .8rem;">
+    <textarea id="body_html" rows="3">&lt;div style="font-family:Arial;padding:20px"&gt;
+  &lt;h2&gt;Hello&lt;/h2&gt;
+  &lt;p&gt;This is a test email. Edit to customize.&lt;/p&gt;
+&lt;/div&gt;</textarea>
+  </div>
+
+  <iframe id="preview-iframe-main" class="preview-frame" sandbox></iframe>
+
+  <div class="file-drop" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#22c55e'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handleFiles(event.dataTransfer.files)">
+    Drop attachments or click to add
+    <input type="file" id="file-input" multiple hidden onchange="handleFiles(this.files)">
+  </div>
+  <div id="file-list"></div>
+
+  <div class="actions">
+    <button class="btn btn-secondary" id="probe-btn" onclick="runPreflight()">Preflight</button>
+    <button class="btn btn-primary" id="send-btn" onclick="requirePassword(sendEmail)">Send</button>
+  </div>
+
+  <div class="pw-inline" id="pw-inline">
+    <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPassword()">
+    <button onclick="checkPassword()">Go</button>
+    <span class="pw-err" id="pw-err"></span>
+  </div>
+
+  <div class="section" id="sec-dns">
+    <div class="section-header" onclick="toggleSection('sec-dns')">
+      <span><span class="arrow">&#9654;</span> DNS &amp; Preflight</span>
+      <div class="section-badges" id="dns-badges"></div>
     </div>
+    <div class="section-body" id="dns-results">
+      <div class="pf-placeholder">Run preflight to see DNS records</div>
+    </div>
+  </div>
 
-    <!-- Detail tabs -->
-    <div class="detail-panel">
-      <div class="tab-bar">
-        <button class="tab-btn active" onclick="showTab('preview',this)">Preview</button>
-        <button class="tab-btn" onclick="showTab('dns',this)">DNS Records</button>
-        <button class="tab-btn" onclick="showTab('sendlog',this)">Send Log</button>
-        <button class="tab-btn" onclick="showTab('tracker',this)">Open Tracker</button>
-      </div>
+  <div class="section" id="sec-log">
+    <div class="section-header" onclick="toggleSection('sec-log')">
+      <span><span class="arrow">&#9654;</span> SMTP Log</span>
+      <div class="section-badges" id="log-badges"></div>
+    </div>
+    <div class="section-body" id="log-output">
+      <div class="pf-placeholder">Send an email to see the SMTP log</div>
+    </div>
+  </div>
 
-      <div class="tab-content active" id="tab-preview">
-        <div id="preview-container" style="flex:1;display:flex;flex-direction:column">
-          <iframe id="preview-iframe-main" style="flex:1;min-height:200px;border:none;border-radius:6px;background:white" srcdoc="<div style='display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-family:sans-serif'>Compose an HTML body to see a live preview</div>"></iframe>
-        </div>
-      </div>
-
-      <div class="tab-content" id="tab-dns">
-        <div id="dns-results">
-          <div class="pf-placeholder">Run Preflight to see DNS records</div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="tab-sendlog">
-        <div class="log-output" id="log-output">Send an email to see the SMTP log here.</div>
-      </div>
-
-      <div class="tab-content" id="tab-tracker">
-        <div class="open-tracker">
-          <h4>Email Open Tracking</h4>
-          <div id="tracker-content">
-            <div class="pf-placeholder" style="min-height:80px">No tracked emails yet</div>
-          </div>
-        </div>
-      </div>
+  <div class="section" id="sec-track">
+    <div class="section-header" onclick="toggleSection('sec-track')">
+      <span><span class="arrow">&#9654;</span> Open Tracking</span>
+      <div class="section-badges" id="track-badges"></div>
+    </div>
+    <div class="section-body" id="tracker-content" style="font-family:inherit">
+      <div class="pf-placeholder">Tracking events will appear here after send</div>
     </div>
   </div>
 </div>
-</div><!-- /view-send -->
 
-<div class="view-panel" id="view-dashboard">
+<!-- ── Dashboard View ── -->
+<div class="page" id="view-dashboard">
   <div class="dash-stats">
-    <div class="stat-card stat-sends">
-      <div class="num" id="stat-sends">0</div>
-      <div class="label">Emails Sent</div>
-    </div>
-    <div class="stat-card stat-opens">
-      <div class="num" id="stat-opens">0</div>
-      <div class="label">Confirmed Opens</div>
-    </div>
-    <div class="stat-card stat-rate">
-      <div class="num" id="stat-rate">&mdash;</div>
-      <div class="label">Open Rate</div>
-    </div>
+    <div class="stat-card stat-sends"><div class="num" id="dash-sent">0</div><div class="label">Sent</div></div>
+    <div class="stat-card stat-opens"><div class="num" id="dash-opens">0</div><div class="label">Opens</div></div>
+    <div class="stat-card stat-rate"><div class="num" id="dash-rate">0%</div><div class="label">Rate</div></div>
   </div>
   <div class="dash-feed">
-    <h2><span class="pulse-dot"></span> Live Event Feed</h2>
-    <div id="feed-list">
-      <div class="feed-empty">Waiting for activity...</div>
-    </div>
+    <h2>Activity</h2>
+    <div id="dash-events"><div class="feed-empty">No events yet — send an email to get started</div></div>
   </div>
-</div><!-- /view-dashboard -->
+</div>
 
-<div class="ngrok-bar" id="ngrok-bar">
-  <span class="ngrok-dot" id="ngrok-dot"></span>
-  <span id="ngrok-text">Checking ngrok...</span>
+<div class="ngrok-footer" id="ngrok-bar">
+  <span id="ngrok-text">No ngrok tunnel &mdash; run <strong>ngrok http 8090</strong> for open tracking</span>
 </div>
 
 <script>
 // ── View switching ──
 function switchView(name) {
-  document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  document.querySelector('.view-tab[onclick*="' + name + '"]').classList.add('active');
-  if (name === 'dashboard' && !_dashStarted) startDashPolling();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (name === 'send') {
+    document.getElementById('view-send').classList.add('active');
+    document.querySelectorAll('.tab')[0].classList.add('active');
+  } else {
+    document.getElementById('view-dashboard').classList.add('active');
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    loadDashboard();
+  }
+}
+// Handle /#dashboard direct link
+if (location.hash === '#dashboard') switchView('dashboard');
+
+// ── Section toggle ──
+function toggleSection(id) {
+  document.getElementById(id).classList.toggle('open');
 }
 
-// ── Password gate ──
-let _sendUnlocked = false;
-function requirePassword(cb) {
-  if (_sendUnlocked) { cb(); return; }
-  _pendingSendCb = cb;
-  document.getElementById('pw-overlay').classList.remove('hidden');
-  const inp = document.getElementById('pw-input');
-  inp.value = '';
-  document.getElementById('pw-err').textContent = '';
-  setTimeout(() => inp.focus(), 100);
+// ── State bar ──
+const STEPS = ['step-0','step-1','step-2','step-3','step-4'];
+function setState(cls, text, stepStates) {
+  const bar = document.getElementById('state-bar');
+  bar.className = 'state-bar ' + cls;
+  document.getElementById('state-text').textContent = text;
+  if (stepStates) {
+    stepStates.forEach((s, i) => {
+      document.getElementById(STEPS[i]).className = 'state-step ' + (s || '');
+    });
+  }
 }
-let _pendingSendCb = null;
+function resetState() { setState('', 'Ready to send', ['','','','','']); }
+
+// ── Password gate (send button only) ──
+let _unlocked = false;
+let _pendingAction = null;
+function requirePassword(action) {
+  if (_unlocked) { action(); return; }
+  _pendingAction = action;
+  const pw = document.getElementById('pw-inline');
+  pw.classList.add('show');
+  document.getElementById('pw-input').focus();
+}
 function checkPassword() {
   const inp = document.getElementById('pw-input');
   if (inp.value === 'password') {
-    _sendUnlocked = true;
-    document.getElementById('pw-overlay').classList.add('hidden');
-    if (_pendingSendCb) { _pendingSendCb(); _pendingSendCb = null; }
+    _unlocked = true;
+    document.getElementById('pw-inline').classList.remove('show');
+    document.getElementById('pw-err').textContent = '';
+    if (_pendingAction) { _pendingAction(); _pendingAction = null; }
   } else {
     document.getElementById('pw-err').textContent = 'sry not for you :)';
     inp.value = '';
-    inp.focus();
-  }
-}
-document.addEventListener('keydown', e => {
-  if (!document.getElementById('pw-overlay').classList.contains('hidden') && e.key === 'Enter') checkPassword();
-  if (!document.getElementById('pw-overlay').classList.contains('hidden') && e.key === 'Escape') document.getElementById('pw-overlay').classList.add('hidden');
-});
-
-// ── Dashboard polling ──
-let _dashStarted = false;
-let _dashCursor = 0, _dashSends = 0, _dashOpens = 0;
-
-function dashFmtTime(iso) {
-  const d = new Date(iso);
-  const diff = (Date.now() - d) / 1000;
-  if (diff < 60) return Math.floor(diff) + 's ago';
-  if (diff < 3600) return Math.floor(diff/60) + 'm ago';
-  if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
-  return d.toLocaleDateString();
-}
-
-function renderDashEvent(ev) {
-  const isSend = ev.type === 'send';
-  const div = document.createElement('div');
-  div.className = 'dash-event ' + (isSend ? 'ev-send' : 'ev-open');
-  const icon = isSend ? '&#9993;' : '&#128065;';
-  const title = isSend ? 'Sent to ' + ev.to : 'Opened by ' + ev.to;
-  const detail = isSend
-    ? ev.from + ' — "' + ev.subject + '"'
-    : 'from ' + (ev.ip || '?') + ' — "' + ev.subject + '"';
-  div.innerHTML =
-    '<div class="ev-icon">' + icon + '</div>' +
-    '<div class="ev-body"><div class="ev-title">' + title + '</div><div class="ev-detail">' + detail + '</div></div>' +
-    '<div class="ev-time">' + dashFmtTime(ev.time) + '</div>';
-  return div;
-}
-
-function startDashPolling() {
-  _dashStarted = true;
-  async function poll() {
-    try {
-      const r = await fetch('/dashboard/events?since=' + _dashCursor);
-      const d = await r.json();
-      if (d.events.length > 0) {
-        const list = document.getElementById('feed-list');
-        if (_dashCursor === 0 && d.events.length > 0) list.innerHTML = '';
-        d.events.forEach(ev => {
-          if (ev.type === 'send') _dashSends++;
-          if (ev.type === 'open') _dashOpens++;
-          list.insertBefore(renderDashEvent(ev), list.firstChild);
-        });
-        _dashCursor = d.total;
-        document.getElementById('stat-sends').textContent = _dashSends;
-        document.getElementById('stat-opens').textContent = _dashOpens;
-        document.getElementById('stat-rate').textContent =
-          _dashSends > 0 ? Math.round((_dashOpens/_dashSends)*100) + '%' : '\u2014';
-      }
-    } catch(e) {}
-  }
-  poll();
-  setInterval(poll, 3000);
-}
-
-// ── Auto-switch view from URL hash ──
-if (window.location.hash === '#dashboard') switchView('dashboard');
-
-// ── Pipeline state management ──
-const STAGE_IDS = ['preview','preflight','inflight','delivered','opened'];
-const STAGE_TAB_MAP = { preview: 'preview', preflight: 'dns', inflight: 'sendlog', delivered: 'sendlog', opened: 'tracker' };
-
-// Build segment lines between dots on first load
-let _segsBuilt = false;
-function buildSegments() {
-  if (_segsBuilt) return;
-  _segsBuilt = true;
-  const track = document.getElementById('pipe-track');
-  const stages = track.querySelectorAll('.pipe-stage');
-  for (let i = 0; i < stages.length - 1; i++) {
-    const seg = document.createElement('div');
-    seg.className = 'pipe-seg';
-    seg.id = 'seg-' + i;
-    track.appendChild(seg);
-  }
-  positionSegments();
-  window.addEventListener('resize', positionSegments);
-}
-function positionSegments() {
-  const track = document.getElementById('pipe-track');
-  const dots = track.querySelectorAll('.pipe-dot');
-  for (let i = 0; i < dots.length - 1; i++) {
-    const seg = document.getElementById('seg-' + i);
-    if (!seg) continue;
-    const r1 = dots[i].getBoundingClientRect();
-    const r2 = dots[i+1].getBoundingClientRect();
-    const tr = track.getBoundingClientRect();
-    const left = r1.left + r1.width/2 - tr.left;
-    const right = r2.left + r2.width/2 - tr.left;
-    seg.style.left = left + 'px';
-    seg.style.width = (right - left) + 'px';
   }
 }
 
-function setPipeStage(id, state, detail) {
-  buildSegments();
-  const el = document.getElementById('stage-' + id);
-  const det = document.getElementById('stage-' + id + '-detail');
-  if (el) el.className = 'pipe-stage ' + state;
-  if (det && detail !== undefined) det.textContent = detail;
-  if (state === 'active' || state === 'glow' || state === 'fail') {
-    const tab = STAGE_TAB_MAP[id];
-    if (tab) {
-      const btns = document.querySelectorAll('.tab-btn');
-      const tabNames = ['preview','dns','sendlog','tracker'];
-      const idx = tabNames.indexOf(tab);
-      if (idx >= 0 && btns[idx]) showTab(tab, btns[idx]);
-    }
-  }
-}
-function setPipeConn(id, state) {
-  const el = document.getElementById('seg-' + id);
-  if (el) el.className = 'pipe-seg ' + state;
-}
-function resetPipeline() {
-  buildSegments();
-  STAGE_IDS.forEach(s => setPipeStage(s, 'idle', ''));
-  for (let i = 0; i < STAGE_IDS.length - 1; i++) setPipeConn(i, '');
-}
-
-// ── Ngrok status check ──
+// ── Ngrok status ──
 async function checkNgrok() {
-  const bar = document.getElementById('ngrok-bar');
+  const pill = document.getElementById('ngrok-pill');
   const txt = document.getElementById('ngrok-text');
   try {
     const resp = await fetch('/status');
     const data = await resp.json();
     if (data.ngrok) {
-      bar.className = 'ngrok-bar connected';
-      txt.innerHTML = `Tracking via <a href="${data.ngrok}" target="_blank">${data.ngrok}</a>`;
+      pill.className = 'status-pill';
+      pill.textContent = 'ngrok connected';
+      txt.innerHTML = 'Tracking via <a href="' + data.ngrok + '" target="_blank">' + data.ngrok + '</a>';
     } else {
-      bar.className = 'ngrok-bar disconnected';
-      txt.innerHTML = 'No ngrok tunnel — run <strong>ngrok http 8090</strong> for open tracking';
+      pill.className = 'status-pill off';
+      pill.textContent = 'ngrok disconnected';
+      txt.innerHTML = 'No ngrok tunnel &mdash; run <strong>ngrok http 8090</strong> for open tracking';
     }
   } catch(e) {
-    bar.className = 'ngrok-bar disconnected';
-    txt.textContent = 'Could not check ngrok status';
+    pill.className = 'status-pill off';
+    pill.textContent = 'ngrok disconnected';
   }
 }
 checkNgrok();
 setInterval(checkNgrok, 15000);
 
-// ── Form helpers ──
+// ── File attachments ──
 let attachedFiles = [];
 function handleFiles(files) { for (const f of files) attachedFiles.push(f); renderFileList(); }
 function removeFile(i) { attachedFiles.splice(i,1); renderFileList(); }
 function renderFileList() {
   const el = document.getElementById('file-list');
   el.innerHTML = attachedFiles.map((f,i) =>
-    `<div class="file-item"><span>${f.name} (${(f.size/1024).toFixed(1)}K)</span><span class="remove" onclick="removeFile(${i})">x</span></div>`
+    '<div class="file-item"><span>' + f.name + ' (' + (f.size/1024).toFixed(1) + 'K)</span><span class="remove" onclick="removeFile(' + i + ')">x</span></div>'
   ).join('');
 }
+
+// ── Preview ──
 function updatePreview() {
   const iframe = document.getElementById('preview-iframe-main');
   const useHtml = document.getElementById('use_html').checked;
@@ -1278,39 +1015,20 @@ function updatePreview() {
   if (useHtml && html.trim()) {
     iframe.srcdoc = html;
   } else if (text.trim()) {
-    iframe.srcdoc = `<pre style="font-family:sans-serif;padding:16px;margin:0">${text.replace(/</g,'&lt;')}</pre>`;
+    iframe.srcdoc = '<pre style="font-family:sans-serif;padding:16px;margin:0">' + text.replace(/</g,'&lt;') + '</pre>';
   } else {
-    iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-family:sans-serif">Compose an HTML body to see a live preview</div>';
+    iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-family:sans-serif">Compose a body to see preview</div>';
   }
 }
-// Live preview updates
 document.getElementById('body_html').addEventListener('input', updatePreview);
 document.getElementById('body_text').addEventListener('input', updatePreview);
 document.getElementById('use_html').addEventListener('change', function() {
   document.getElementById('html-field').style.display = this.checked ? 'block' : 'none';
   updatePreview();
 });
-// Initial preview
 updatePreview();
 
-// Light up Stage 0 when composing
-['from_addr','to_addr','subject','body_text','body_html'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) el.addEventListener('focus', () => {
-    const stage = document.getElementById('stage-preview');
-    if (stage && stage.classList.contains('idle')) {
-      setPipeStage('preview', 'active', 'Composing...');
-    }
-  });
-});
-
-function showTab(name, btnEl) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  if (btnEl) btnEl.classList.add('active');
-}
-
+// ── Helpers ──
 function colorLog(text) {
   return text
     .replace(/^(═══.*═══)$/gm, '<span class="header">$1</span>')
@@ -1323,31 +1041,26 @@ function colorLog(text) {
 }
 
 function badge(type, text) {
-  return `<span class="pf-badge ${type}">${text}</span>`;
+  return '<span class="pf-badge ' + type + '">' + text + '</span>';
 }
 
 function probeStepHtml(label, status, statusText) {
-  const cls = status === 'ok' ? 'ok' : status === 'fail' ? 'fail' : status === 'warn' ? 'warn' : 'pending';
-  return `<div class="probe-step ${cls}"><span class="label">${label}</span><span class="status">${statusText}</span></div>`;
+  var cls = status === 'ok' ? 'ok' : status === 'fail' ? 'fail' : status === 'warn' ? 'warn' : 'pending';
+  return '<div class="probe-step ' + cls + '"><span class="label">' + label + '</span><span class="status">' + statusText + '</span></div>';
 }
 
 // ── Preflight ──
 let _lastPreflight = null;
 async function runPreflight() {
   const btn = document.getElementById('probe-btn');
-  btn.className = 'btn btn-probe sending'; btn.textContent = 'Checking...';
+  btn.className = 'btn btn-secondary sending'; btn.textContent = 'Checking...';
 
-  // Pipeline: mark preview done, activate preflight
-  resetPipeline();
-  setPipeStage('preview', 'done', 'Ready');
-  setPipeConn('0', 'done');
-  setPipeStage('preflight', 'active', 'Scanning DNS...');
-
-  // Switch to DNS tab
-  showTab('dns', document.querySelectorAll('.tab-btn')[0]);
+  setState('working', 'Running preflight...', ['done','active','','','']);
+  toggleSection('sec-dns');
+  document.getElementById('sec-dns').classList.add('open');
 
   const container = document.getElementById('dns-results');
-  container.innerHTML = '<div class="pf-placeholder" style="color:#3b82f6">Querying DNS records...</div>';
+  container.innerHTML = '<div class="pf-placeholder" style="color:#1d4ed8">Querying DNS records...</div>';
 
   const params = new URLSearchParams({
     from_addr: document.getElementById('from_addr').value,
@@ -1361,94 +1074,86 @@ async function runPreflight() {
     _lastPreflight = d;
 
     const pred = d.probe.prediction;
-    const isBlocked = (pred === 'BLOCKED' || pred === 'MAIL_FROM_REJECTED');
 
-    // Update pipeline — always green on completion, fail only on hard errors
-    if (pred === 'PORT_BLOCKED') {
-      setPipeStage('preflight', 'fail', 'Port blocked');
-    } else if (pred === 'ERROR' || pred === 'CANNOT_RESOLVE') {
-      setPipeStage('preflight', 'fail', pred);
+    if (pred === 'PORT_BLOCKED' || pred === 'ERROR' || pred === 'CANNOT_RESOLVE') {
+      setState('failed', 'Preflight failed: ' + pred, ['done','fail','','','']);
     } else {
-      setPipeStage('preflight', 'done', 'Complete');
-      setPipeConn('1', 'done');
+      setState('ready', 'Preflight complete', ['done','done','','','']);
     }
 
+    // Badges
+    var badges = '';
+    if (d.spf.verdict === 'SOFTFAIL') badges += '<span class="section-badge badge-warn">SPF ~all</span>';
+    else if (d.spf.verdict === 'FAIL') badges += '<span class="section-badge badge-fail">SPF -all</span>';
+    else if (d.spf.verdict === 'PASS') badges += '<span class="section-badge badge-ok">SPF pass</span>';
+    else badges += '<span class="section-badge badge-none">SPF none</span>';
+
+    if (d.dmarc.policy === 'none') badges += '<span class="section-badge badge-warn">DMARC p=none</span>';
+    else if (d.dmarc.policy === 'quarantine') badges += '<span class="section-badge badge-warn">p=quarantine</span>';
+    else if (d.dmarc.policy === 'reject') badges += '<span class="section-badge badge-ok">p=reject</span>';
+    else badges += '<span class="section-badge badge-none">No DMARC</span>';
+
+    if (d.probe.port25 === 'OPEN') badges += '<span class="section-badge badge-info">Port 25</span>';
+    else badges += '<span class="section-badge badge-fail">Port blocked</span>';
+
+    document.getElementById('dns-badges').innerHTML = badges;
+
     // SPF badge
-    let spfBadge = badge('none', 'NONE');
+    var spfBadge = badge('none', 'NONE');
     if (d.spf.verdict === 'SOFTFAIL') spfBadge = badge('warn', 'SOFTFAIL');
     else if (d.spf.verdict === 'FAIL') spfBadge = badge('fail', 'HARDFAIL');
     else if (d.spf.verdict === 'PASS') spfBadge = badge('pass', 'PASS');
     else if (d.spf.verdict === 'NEUTRAL') spfBadge = badge('info', 'NEUTRAL');
-    let dkimBadge = d.dkim.found ? badge('fail', 'WILL FAIL') : badge('none', 'NO KEY');
-    let dmarcBadge = badge('none', 'NONE');
+    var dkimBadge = d.dkim.found ? badge('fail', 'WILL FAIL') : badge('none', 'NO KEY');
+    var dmarcBadge = badge('none', 'NONE');
     if (d.dmarc.policy === 'none') dmarcBadge = badge('fail', 'p=none');
     else if (d.dmarc.policy === 'quarantine') dmarcBadge = badge('warn', 'p=quarantine');
     else if (d.dmarc.policy === 'reject') dmarcBadge = badge('pass', 'p=reject');
     else if (d.dmarc.policy === 'missing') dmarcBadge = badge('none', 'MISSING');
-    let mxBadge = d.mx.selected ? badge('info', d.mx.selected.split('.').slice(-3).join('.')) : badge('fail', 'NONE');
+    var mxBadge = d.mx.selected ? badge('info', d.mx.selected.split('.').slice(-3).join('.')) : badge('fail', 'NONE');
 
     // Probe steps
-    let probeHtml = '';
-    const pr = d.probe;
+    var probeHtml = '';
+    var pr = d.probe;
     probeHtml += probeStepHtml('Port 25', pr.port25==='OPEN'?'ok':pr.port25==='BLOCKED'?'fail':'pending', pr.port25||'—');
     probeHtml += probeStepHtml('EHLO', pr.ehlo==='OK'?'ok':'pending', pr.ehlo||'—');
     probeHtml += probeStepHtml('STARTTLS', pr.starttls==='OK'?'ok':pr.starttls==='NOT_SUPPORTED'?'warn':'pending', pr.starttls||'—');
-    probeHtml += probeStepHtml('MAIL FROM', pr.mail_from==='ACCEPTED'?'ok':pr.mail_from?.startsWith('REJECTED')?'fail':'pending', pr.mail_from?.replace('REJECTED_','')|| '—');
-    probeHtml += probeStepHtml('RCPT TO', pr.rcpt_to==='ACCEPTED'?'ok':pr.rcpt_to?.startsWith('REJECTED')?'fail':'pending', pr.rcpt_to?.replace('REJECTED_','')||'—');
+    probeHtml += probeStepHtml('MAIL FROM', pr.mail_from==='ACCEPTED'?'ok':pr.mail_from&&pr.mail_from.startsWith('REJECTED')?'fail':'pending', pr.mail_from?pr.mail_from.replace('REJECTED_',''):'—');
+    probeHtml += probeStepHtml('RCPT TO', pr.rcpt_to==='ACCEPTED'?'ok':pr.rcpt_to&&pr.rcpt_to.startsWith('REJECTED')?'fail':'pending', pr.rcpt_to?pr.rcpt_to.replace('REJECTED_',''):'—');
 
-    container.innerHTML = `
-      <div class="probe-steps">${probeHtml}</div>
-      <div class="pf-grid">
-        <div class="pf-card">
-          <h3 style="color:#60a5fa">MX (${d.to_domain}) ${mxBadge}</h3>
-          <p>${d.mx.records.map(r => `pri ${r.priority}: <code>${r.host}</code>`).join('<br>') || 'No records found'}</p>
-        </div>
-        <div class="pf-card">
-          <h3 style="color:#f472b6">SPF (${d.from_domain}) ${spfBadge}</h3>
-          <p>${d.spf.record ? `<code>${d.spf.record}</code>` : 'No SPF record found'}</p>
-          ${d.spf.policy ? `<p style="margin-top:.15rem">Policy: <strong>${d.spf.policy}</strong></p>` : ''}
-        </div>
-        <div class="pf-card">
-          <h3 style="color:#a78bfa">DKIM (${d.from_domain}) ${dkimBadge}</h3>
-          <p>${d.dkim.found ? `Key at <code>${d.dkim.record}</code><br>No private key = FAIL` : 'No DKIM key found'}</p>
-        </div>
-        <div class="pf-card">
-          <h3 style="color:#22d3ee">DMARC (${d.from_domain}) ${dmarcBadge}</h3>
-          <p>${d.dmarc.record ? `<code>${d.dmarc.record}</code>` : 'No DMARC record found'}</p>
-          ${d.dmarc.policy === 'none' ? '<p style="margin-top:.15rem;color:#fca5a5"><strong>p=none = no protection</strong></p>' : ''}
-        </div>
-      </div>
-      <details style="margin-top:.3rem">
-        <summary style="font-size:.62rem;color:#64748b;cursor:pointer">Raw preflight log</summary>
-        <div class="log-output" style="margin-top:.2rem;max-height:200px;min-height:0">${colorLog(d.log.join('\n'))}</div>
-      </details>
-    `;
+    container.innerHTML =
+      '<div class="probe-steps">' + probeHtml + '</div>' +
+      '<div class="pf-grid">' +
+        '<div class="pf-card"><h3 style="color:#166534">MX (' + d.to_domain + ') ' + mxBadge + '</h3>' +
+          '<p>' + (d.mx.records.map(function(r){return 'pri ' + r.priority + ': <code>' + r.host + '</code>'}).join('<br>') || 'No records found') + '</p></div>' +
+        '<div class="pf-card"><h3 style="color:#166534">SPF (' + d.from_domain + ') ' + spfBadge + '</h3>' +
+          '<p>' + (d.spf.record ? '<code>' + d.spf.record + '</code>' : 'No SPF record found') + '</p>' +
+          (d.spf.policy ? '<p style="margin-top:.15rem">Policy: <strong>' + d.spf.policy + '</strong></p>' : '') + '</div>' +
+        '<div class="pf-card"><h3 style="color:#166534">DKIM (' + d.from_domain + ') ' + dkimBadge + '</h3>' +
+          '<p>' + (d.dkim.found ? 'Key at <code>' + d.dkim.record + '</code><br>No private key = FAIL' : 'No DKIM key found') + '</p></div>' +
+        '<div class="pf-card"><h3 style="color:#166534">DMARC (' + d.from_domain + ') ' + dmarcBadge + '</h3>' +
+          '<p>' + (d.dmarc.record ? '<code>' + d.dmarc.record + '</code>' : 'No DMARC record found') + '</p>' +
+          (d.dmarc.policy === 'none' ? '<p style="margin-top:.15rem;color:#dc2626"><strong>p=none = no protection</strong></p>' : '') + '</div>' +
+      '</div>' +
+      '<details style="margin-top:.3rem"><summary style="font-size:.62rem;color:#9ca3af;cursor:pointer">Raw preflight log</summary>' +
+        '<div class="log-output" style="margin-top:.2rem;max-height:200px;min-height:0">' + colorLog(d.log.join('\n')) + '</div></details>';
   } catch(err) {
-    setPipeStage('preflight', 'fail', 'Error');
-    container.innerHTML = `<div class="pf-placeholder" style="color:#f87171">Error: ${err.message}</div>`;
+    setState('failed', 'Preflight error: ' + err.message, ['done','fail','','','']);
+    container.innerHTML = '<div class="pf-placeholder" style="color:#dc2626">Error: ' + err.message + '</div>';
   }
-  btn.className = 'btn btn-probe'; btn.textContent = 'Preflight';
+  btn.className = 'btn btn-secondary'; btn.textContent = 'Preflight';
 }
 
 // ── Send ──
 async function sendEmail() {
   const btn = document.getElementById('send-btn');
   const logEl = document.getElementById('log-output');
+  btn.className = 'btn btn-primary sending'; btn.textContent = 'Sending...';
 
-  btn.className = 'btn btn-send sending'; btn.textContent = 'Sending...';
+  setState('working', 'Connecting to MX server...', ['done','done','active','','']);
 
-  // Pipeline: keep earlier stages done, activate in-flight
-  setPipeStage('preview', 'done', 'Ready');
-  setPipeConn('0', 'done');
-  if (!document.getElementById('stage-preflight').classList.contains('warn') &&
-      !document.getElementById('stage-preflight').classList.contains('done')) {
-    setPipeStage('preflight', 'done', 'Skipped');
-  }
-  setPipeConn('1', 'active');
-  setPipeStage('inflight', 'active', 'Connecting...');
-
-  // Switch to send log tab
-  showTab('sendlog', document.querySelectorAll('.tab-btn')[1]);
+  // Open log section
+  document.getElementById('sec-log').classList.add('open');
   logEl.innerHTML = 'Connecting to MX server...\n';
 
   const fd = new FormData();
@@ -1467,83 +1172,118 @@ async function sendEmail() {
     logEl.scrollTop = logEl.scrollHeight;
 
     if (data.success) {
-      btn.className = 'btn btn-send success'; btn.textContent = 'Delivered';
-      // Pipeline: delivered
-      setPipeStage('inflight', 'done', 'Sent');
-      setPipeConn('1', 'done');
-      setPipeConn('2', 'done');
-      setPipeStage('delivered', 'glow', new Date().toLocaleTimeString());
-      setPipeConn('3', 'active');
-      setPipeStage('opened', 'active', 'Waiting...');
-      // Start tracking opens
+      btn.className = 'btn btn-primary success'; btn.textContent = 'Delivered';
+      setState('success', 'Delivered to ' + document.getElementById('to_addr').value + ' — waiting for open', ['done','done','done','done','active']);
+      document.getElementById('log-badges').innerHTML = '<span class="section-badge badge-ok">Delivered</span>';
       if (data.track_id) startTrackingPolling(data.track_id);
     } else {
-      // Pipeline: failed
-      setPipeStage('inflight', 'fail', 'Rejected');
-      setPipeConn('1', 'fail');
+      setState('failed', 'Send failed — check SMTP log', ['done','done','fail','','']);
+      document.getElementById('log-badges').innerHTML = '<span class="section-badge badge-fail">Failed</span>';
     }
   } catch(err) {
-    logEl.innerHTML = `<span class="error">Error: ${err.message}</span>`;
-    setPipeStage('inflight', 'fail', 'Error');
-    setPipeConn('1', 'fail');
+    logEl.innerHTML = '<span class="error">Error: ' + err.message + '</span>';
+    setState('failed', 'Send error: ' + err.message, ['done','done','fail','','']);
   }
-  setTimeout(() => { btn.className = 'btn btn-send'; btn.textContent = 'Send'; }, 4000);
+  setTimeout(function() { btn.className = 'btn btn-primary'; btn.textContent = 'Send'; }, 4000);
 }
 
 // ── Open Tracking ──
 let _trackPollers = {};
-
 function startTrackingPolling(trackId) {
   const el = document.getElementById('tracker-content');
 
   if (!document.getElementById('track-' + trackId)) {
-    const entry = document.createElement('div');
+    var entry = document.createElement('div');
     entry.id = 'track-' + trackId;
     entry.className = 'open-event waiting';
-    entry.innerHTML = `
-      <span class="dot"></span>
-      <span class="time">waiting...</span>
-      <span class="detail">${document.getElementById('to_addr').value} — ${document.getElementById('subject').value}</span>
-    `;
-    const placeholder = el.querySelector('.pf-placeholder');
+    entry.innerHTML =
+      '<span class="dot"></span>' +
+      '<span class="time">waiting...</span>' +
+      '<span class="detail">' + document.getElementById('to_addr').value + ' — ' + document.getElementById('subject').value + '</span>';
+    var placeholder = el.querySelector('.pf-placeholder');
     if (placeholder) placeholder.remove();
     el.prepend(entry);
   }
 
   if (_trackPollers[trackId]) clearInterval(_trackPollers[trackId]);
-  _trackPollers[trackId] = setInterval(async () => {
+  _trackPollers[trackId] = setInterval(async function() {
     try {
-      const resp = await fetch('/track-events?id=' + trackId);
-      const data = await resp.json();
-      const entry = document.getElementById('track-' + trackId);
+      var resp = await fetch('/track-events?id=' + trackId);
+      var data = await resp.json();
+      var entry = document.getElementById('track-' + trackId);
       if (data.opens && data.opens.length > 0) {
-        const latest = data.opens[data.opens.length - 1];
-        const t = new Date(latest.time);
-        const timeStr = t.toLocaleTimeString();
+        var latest = data.opens[data.opens.length - 1];
+        var t = new Date(latest.time);
+        var timeStr = t.toLocaleTimeString();
         entry.className = 'open-event';
-        entry.innerHTML = `
-          <span class="dot"></span>
-          <span class="time">${timeStr}</span>
-          <span class="detail">Opened ${data.opens.length}x — ${data.to} — ${data.subject}</span>
-        `;
-        // Update pipeline stage 4
-        setPipeConn('3', 'done');
-        setPipeStage('opened', 'glow', `${data.opens.length}x — ${timeStr}`);
-        // Flash the tracker tab
-        const trackerBtn = document.querySelectorAll('.tab-btn')[2];
-        if (trackerBtn && !trackerBtn.classList.contains('active')) {
-          trackerBtn.style.color = '#4ade80';
-          trackerBtn.style.textShadow = '0 0 8px #4ade80';
-          setTimeout(() => { trackerBtn.style.color = ''; trackerBtn.style.textShadow = ''; }, 3000);
+        entry.innerHTML =
+          '<span class="dot"></span>' +
+          '<span class="time">' + timeStr + '</span>' +
+          '<span class="detail">Opened ' + data.opens.length + 'x — ' + data.to + ' — ' + data.subject + '</span>';
+        // Update state bar
+        setState('success', 'Opened ' + data.opens.length + 'x by ' + data.to, ['done','done','done','done','done']);
+        // Update tracking badges
+        document.getElementById('track-badges').innerHTML = '<span class="section-badge badge-ok">' + data.opens.length + ' open' + (data.opens.length > 1 ? 's' : '') + '</span>';
+        // Flash the section header
+        var secTrack = document.getElementById('sec-track');
+        if (!secTrack.classList.contains('open')) {
+          secTrack.querySelector('.section-header').style.background = '#dcfce7';
+          setTimeout(function() { secTrack.querySelector('.section-header').style.background = ''; }, 3000);
         }
       }
     } catch(e) {}
   }, 5000);
 }
+
+// ── Dashboard ──
+let _dashIdx = 0;
+let _dashInterval = null;
+function loadDashboard() {
+  if (_dashInterval) return;
+  fetchDashEvents();
+  _dashInterval = setInterval(fetchDashEvents, 5000);
+}
+async function fetchDashEvents() {
+  try {
+    var resp = await fetch('/dashboard/events?since=' + _dashIdx);
+    var data = await resp.json();
+    if (data.events && data.events.length > 0) {
+      var container = document.getElementById('dash-events');
+      var empty = container.querySelector('.feed-empty');
+      if (empty) empty.remove();
+      data.events.forEach(function(ev) {
+        var div = document.createElement('div');
+        div.className = 'dash-event ev-' + ev.type;
+        var icon = ev.type === 'open' ? '&#128065;' : '&#9993;';
+        var title = ev.type === 'open'
+          ? 'Opened by ' + ev.to
+          : 'Sent to ' + ev.to;
+        var detail = ev.type === 'open'
+          ? 'from ' + (ev.ip || '') + ' — "' + (ev.subject || '') + '"'
+          : (ev.from || '') + ' — "' + (ev.subject || '') + '"';
+        var t = new Date(ev.time);
+        div.innerHTML =
+          '<div class="ev-icon">' + icon + '</div>' +
+          '<div class="ev-body"><div class="ev-title">' + title + '</div><div class="ev-detail">' + detail + '</div></div>' +
+          '<div class="ev-time">' + t.toLocaleTimeString() + '</div>';
+        container.prepend(div);
+      });
+      _dashIdx = data.total;
+    }
+    // Update stats
+    var tResp = await fetch('/track-events');
+    var tData = await tResp.json();
+    var sends = Object.keys(tData).length;
+    var opens = 0;
+    Object.values(tData).forEach(function(v) { opens += (v.opens || []).length; });
+    document.getElementById('dash-sent').textContent = sends;
+    document.getElementById('dash-opens').textContent = opens;
+    document.getElementById('dash-rate').textContent = sends > 0 ? Math.round(opens/sends*100) + '%' : '0%';
+  } catch(e) {}
+}
 </script>
 </body>
-</html>
-"""
+</html>"""
 
 
 # ── Multipart form parser (replaces deprecated cgi module) ──────────

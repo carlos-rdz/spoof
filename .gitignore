@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+
+# Claude Code
+.claude/
+
+# Ngrok
+ngrok.yml
+
+# Unrelated projects
+Cove/
+golf-clash-auto-aim/
+iran-cost-tracker/
+app.html
+data-dashboard.html
+index.html
+
+# Legacy/scratch files
+sample_email.eml
+simulate_email_flow.py
+spoof_test.py
+mockup_*.html
