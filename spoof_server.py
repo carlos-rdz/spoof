@@ -503,6 +503,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spoofy</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 32'%3E%3Cpath d='M14 2C8.5 2 4 6.5 4 12v14l3.5-3.5L11 26l3-3.5L17 26l3.5-3.5L24 26V12C24 6.5 19.5 2 14 2z' fill='%2322c55e'/%3E%3Cellipse cx='10.5' cy='13' rx='2.5' ry='2.8' fill='%23166534'/%3E%3Cellipse cx='17.5' cy='13' rx='2.5' ry='2.8' fill='%23166534'/%3E%3C/svg%3E">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -822,12 +823,19 @@ HTML_PAGE = r"""<!DOCTYPE html>
     to { opacity: 1; transform: translateY(0); }
   }
 
-  /* Ghost mascot — fixed fade: 0.8s in, 1s out */
+  /* Ghost mascot — lifelike with idle float */
   .ghost-mascot {
     position: fixed; z-index: 9998; pointer-events: none;
     width: 54px; height: 63px;
     transition: left 1s cubic-bezier(.25,.46,.45,.94), top 1s cubic-bezier(.25,.46,.45,.94), opacity 0.8s ease;
     opacity: 0;
+    filter: drop-shadow(0 2px 6px rgba(34,197,94,0.18));
+    animation: ghostIdle 3.5s ease-in-out infinite;
+  }
+  @keyframes ghostIdle {
+    0%,100% { transform: translateY(0) rotate(0deg) scale(1); }
+    30% { transform: translateY(-3px) rotate(0.8deg) scale(1.01); }
+    60% { transform: translateY(2px) rotate(-0.6deg) scale(0.99); }
   }
   .ghost-mascot.fade-in { opacity: 0.9; transition: left 1s cubic-bezier(.25,.46,.45,.94), top 1s cubic-bezier(.25,.46,.45,.94), opacity 0.8s ease-in; }
   .ghost-mascot.solid { opacity: 1 !important; transition: none; }
@@ -836,11 +844,11 @@ HTML_PAGE = r"""<!DOCTYPE html>
     transition: left 2.8s cubic-bezier(.25,.46,.45,.94), top 2.8s cubic-bezier(.25,.46,.45,.94), opacity 1s ease-out;
     opacity: 0;
   }
-  .ghost-mascot.wiggle { animation: ghostWiggle 0.4s ease-in-out 3; }
+  .ghost-mascot.wiggle { animation: ghostWiggle 0.4s ease-in-out 3, ghostIdle 3.5s ease-in-out infinite; }
   @keyframes ghostWiggle {
     0%,100% { transform: scale(1) rotate(0deg); }
-    25% { transform: scale(1) rotate(-8deg); }
-    75% { transform: scale(1) rotate(8deg); }
+    25% { transform: scale(1.05) rotate(-8deg); }
+    75% { transform: scale(1.05) rotate(8deg); }
   }
   /* Brand logo ghost — fades when mascot leaves */
   .brand-logo.ghost-away { opacity: 0; transition: opacity 0.6s ease-out; }
@@ -857,6 +865,12 @@ HTML_PAGE = r"""<!DOCTYPE html>
     6% { opacity: 1; transform: translateX(-50%) scale(1.15); }
     50% { opacity: 1; transform: translateX(-50%) scale(1); }
     100% { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+  }
+  @keyframes esmokinShoot {
+    0% { opacity: 0; transform: translateX(0) scale(0.7); }
+    8% { opacity: 1; transform: translateX(8px) scale(1.1); }
+    40% { opacity: 1; transform: translateX(30px) scale(1); }
+    100% { opacity: 0; transform: translateX(60px) scale(0.85); }
   }
 
   /* Ambient background system */
@@ -908,7 +922,8 @@ HTML_PAGE = r"""<!DOCTYPE html>
       Spoofy
     </div>
   </div>
-  <div class="status-pill off" id="ngrok-pill">ngrok disconnected</div>
+  <!-- ngrok status hidden - not needed in UI -->
+  <div class="status-pill off" id="ngrok-pill" style="display:none">ngrok disconnected</div>
 </div>
 
 <!-- Wizard progress -->
@@ -1329,8 +1344,15 @@ async function sendEmail() {
   try {
     const resp = await fetch('/send', { method: 'POST', body: fd });
     const data = await resp.json();
-    logEl.innerHTML = colorLog(data.log);
-    logEl.scrollTop = logEl.scrollHeight;
+    // Progressive log reveal — line by line
+    var logLines = data.log.split('\n');
+    logEl.innerHTML = '';
+    (function revealLog(i) {
+      if (i >= logLines.length) return;
+      logEl.innerHTML = colorLog(logLines.slice(0, i+1).join('\n'));
+      logEl.scrollTop = logEl.scrollHeight;
+      setTimeout(function(){ revealLog(i+1); }, 60);
+    })(0);
 
     if (data.success) {
       btn.className = 'btn btn-primary success'; btn.textContent = 'Delivered ✓';
@@ -1588,123 +1610,173 @@ async function fetchDashEvents() {
   var driftTimer = null;
   var trailInt = null;
   var ghostX = 0, ghostY = 0;
-  var GW = 27, GH = 31; // half-sizes for center offset
+  var ghostBusy = false; // prevent overlapping animations
+  var GW = 27, GH = 31;
 
   function getLogoPos() {
     var r = logo.getBoundingClientRect();
     return { x: r.left + r.width/2 - GW, y: r.top + r.height/2 - GH };
   }
 
-  // Position at logo
+  // Ghost starts invisible at logo position — logo SVG is what's visible
   var lp = getLogoPos();
   ghost.style.left = lp.x + 'px'; ghost.style.top = lp.y + 'px';
+  ghost.style.opacity = '0';
   ghostX = lp.x; ghostY = lp.y;
 
   function startTrail() { stopTrail(); trailInt = setInterval(function(){ if(window._ambient) window._ambient.trail(ghostX+GW, ghostY+GH, 1); }, 120); }
   function stopTrail() { if(trailInt){clearInterval(trailInt);trailInt=null;} }
   function stopDrift() { if(driftTimer){clearInterval(driftTimer);driftTimer=null;} }
 
-  function resetGhost() {
+  function killGhost() {
+    // Immediately hide ghost and clean up — no position change
     stopDrift(); stopTrail();
+    ghostBusy = false;
     ghost.className = 'ghost-mascot';
-    ghost.style.removeProperty('opacity');
-    ghost.style.removeProperty('transition');
+    ghost.style.transition = 'none';
+    ghost.style.opacity = '0';
+    // Snap to logo position while invisible
     var lp = getLogoPos();
     ghost.style.left = lp.x+'px'; ghost.style.top = lp.y+'px';
     ghostX = lp.x; ghostY = lp.y;
     logo.classList.remove('ghost-away');
     logo.classList.add('ghost-home');
-    // Clean up any esmokin text
     document.querySelectorAll('.esmokin-text').forEach(function(e){ e.remove(); });
   }
 
-  // ── Track current step for forward/backward detection ──
+  // ── "esmokin!" text that shoots right past Spoofy brand name ──
+  function esmokinAtHome() {
+    var brand = document.querySelector('.brand');
+    if (!brand) return;
+    var br = brand.getBoundingClientRect();
+    var txt = document.createElement('div');
+    txt.className = 'esmokin-text';
+    txt.textContent = 'esmokin!';
+    txt.style.left = (br.right + 10) + 'px';
+    txt.style.top = (br.top + br.height/2 - 8) + 'px';
+    txt.style.transform = 'none'; // override the default center transform
+    txt.style.animation = 'esmokinShoot 2s ease-out forwards';
+    document.body.appendChild(txt);
+  }
+
   var currentStep = 1;
 
   // ── Preflight ghost (step 2): fade in at DNS, drift down, fade out ──
   function ghostPreflight() {
-    var dns = document.getElementById('sec-dns');
-    if (!dns) return;
-    var r = dns.getBoundingClientRect();
-    logo.classList.remove('ghost-home');
-    logo.classList.add('ghost-away');
-    // Position invisible at top-right of DNS panel
-    ghost.style.transition = 'none';
-    var tx = r.right - 70, ty = r.top - 15;
-    ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
-    ghostX = tx; ghostY = ty;
-    // Fade in after arriving (0.8s fade)
+    if (ghostBusy) return;
+    ghostBusy = true;
+
     setTimeout(function() {
-      ghost.style.transition = '';
-      ghost.classList.add('fade-in');
-      startTrail();
-      // Drift down slowly
-      var panelBottom = r.bottom - 30;
-      driftTimer = setInterval(function() {
-        ty += 0.8;
-        ghost.style.top = ty+'px'; ghostY = ty;
-        if (ty >= panelBottom) {
-          stopDrift();
-          // Fade out (1s fade)
-          ghost.classList.remove('fade-in');
-          ghost.classList.add('fade-out');
-          stopTrail();
-          setTimeout(resetGhost, 1200);
-        }
+      var dns = document.getElementById('sec-dns');
+      if (!dns) { ghostBusy = false; return; }
+      var r = dns.getBoundingClientRect();
+      if (r.width === 0) { ghostBusy = false; return; }
+
+      // Hide logo SVG, ghost takes over
+      logo.classList.remove('ghost-home');
+      logo.classList.add('ghost-away');
+
+      // Position ghost invisible at DNS panel
+      ghost.style.transition = 'none';
+      ghost.style.opacity = '0';
+      ghost.className = 'ghost-mascot';
+      var tx = r.right - 70, ty = r.top + 10;
+      ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
+      ghostX = tx; ghostY = ty;
+
+      var driftEnd = Math.max(r.bottom - 30, ty + 200);
+
+      // Slow fade in
+      setTimeout(function() {
+        ghost.style.transition = 'opacity 1.2s ease-in';
+        ghost.style.opacity = '0.85';
+        startTrail();
+
+        // Drift down
+        setTimeout(function() {
+          driftTimer = setInterval(function() {
+            ty += 0.6;
+            ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
+            ghostY = ty;
+            if (ty >= driftEnd) {
+              stopDrift();
+              // Slow fade out
+              ghost.style.transition = 'opacity 1.5s ease-out';
+              ghost.style.opacity = '0';
+              stopTrail();
+              setTimeout(function() {
+                killGhost();
+                // esmokin! when ghost returns home
+                esmokinAtHome();
+              }, 1600);
+            }
+          }, 40);
+        }, 600);
       }, 50);
-    }, 100);
+    }, 400);
   }
 
-  // ── Monitor ghost (step 3): instant appear + esmokin + slow drift home ──
+  // ── Monitor ghost (step 3): appear in place after 1s, esmokin, drift home ──
   function ghostMonitor() {
-    var events = document.getElementById('dash-events');
-    if (!events) return;
-    var firstEvent = events.querySelector('.dash-event');
-    var r, tx, ty;
-    if (firstEvent) {
-      r = firstEvent.getBoundingClientRect();
-      tx = Math.min(r.right + 12, window.innerWidth - 70);
-      ty = r.top - 8;
-    } else {
-      r = events.getBoundingClientRect();
-      tx = r.left + r.width/2 + 100;
-      ty = r.top + 5;
-    }
-    // Pre-position INVISIBLE
-    ghost.style.transition = 'none';
-    ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
-    ghostX = tx; ghostY = ty;
-    logo.classList.remove('ghost-home');
-    logo.classList.add('ghost-away');
+    if (ghostBusy) return;
+    ghostBusy = true;
 
-    // After 1s — INSTANT appear in place
     setTimeout(function() {
-      ghost.classList.add('solid');
-      ghost.classList.add('wiggle');
-      // "esmokin!" text
-      var txt = document.createElement('div');
-      txt.className = 'esmokin-text';
-      txt.textContent = 'esmokin!';
-      txt.style.left = (tx + GW) + 'px';
-      txt.style.top = (ty - 22) + 'px';
-      document.body.appendChild(txt);
+      var events = document.getElementById('dash-events');
+      if (!events) { ghostBusy = false; return; }
+      var firstEvent = events.querySelector('.dash-event');
+      var r, tx, ty;
+      if (firstEvent) {
+        r = firstEvent.getBoundingClientRect();
+        tx = Math.min(r.right + 12, window.innerWidth - 70);
+        ty = r.top - 8;
+      } else {
+        r = events.getBoundingClientRect();
+        tx = r.left + r.width/2 + 100;
+        ty = r.top + 5;
+      }
 
-      // After 2s visible — slow drift home (total visible ~3.5s, under 4s cap)
+      // Pre-position INVISIBLE — ghost is hidden, logo SVG still shows
+      ghost.style.transition = 'none';
+      ghost.style.opacity = '0';
+      ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
+      ghostX = tx; ghostY = ty;
+
+      // After 1s — hide logo, INSTANT ghost appear
       setTimeout(function() {
-        ghost.classList.remove('solid', 'wiggle');
-        ghost.style.transition = '';
-        ghost.classList.add('returning');
-        startTrail();
-        var lp = getLogoPos();
-        ghost.style.left = lp.x+'px'; ghost.style.top = lp.y+'px';
-        ghostX = lp.x; ghostY = lp.y;
-        // After drift completes — fully gone
+        logo.classList.remove('ghost-home');
+        logo.classList.add('ghost-away');
+        ghost.style.opacity = '1';
+        ghost.classList.add('wiggle');
+
+        // "esmokin!" text next to ghost
+        var txt = document.createElement('div');
+        txt.className = 'esmokin-text';
+        txt.textContent = 'esmokin!';
+        txt.style.left = (tx + GW) + 'px';
+        txt.style.top = (ty - 22) + 'px';
+        document.body.appendChild(txt);
+
+        // After 1.5s — fade out and drift home
         setTimeout(function() {
-          stopTrail();
-          resetGhost();
-        }, 3000);
-      }, 1500);
-    }, 1000);
+          ghost.classList.remove('wiggle');
+          startTrail();
+          // Slow fade while drifting
+          ghost.style.transition = 'left 2.5s cubic-bezier(.25,.46,.45,.94), top 2.5s cubic-bezier(.25,.46,.45,.94), opacity 2s ease-out';
+          ghost.style.opacity = '0';
+          var lp = getLogoPos();
+          ghost.style.left = lp.x+'px'; ghost.style.top = lp.y+'px';
+          ghostX = lp.x; ghostY = lp.y;
+
+          setTimeout(function() {
+            stopTrail();
+            killGhost();
+            // esmokin! shoots past brand name on arrival home
+            esmokinAtHome();
+          }, 2800);
+        }, 1500);
+      }, 1000);
+    }, 300);
   }
 
   // ── Hook Run Preflight button ──
@@ -1719,19 +1791,16 @@ async function fetchDashEvents() {
   var origGoStep = window.goStep;
   window.goStep = function(n) {
     origGoStep(n);
-    // Burst particles on every navigation
     if (window._ambient && window._ambient.burst) window._ambient.burst();
-    // Always clean up current ghost state first
-    stopDrift(); stopTrail();
-    document.querySelectorAll('.esmokin-text').forEach(function(e){ e.remove(); });
-    resetGhost();
+
+    // Kill any running ghost animation instantly
+    killGhost();
 
     var wasForward = n > currentStep;
     currentStep = n;
 
-    if (!wasForward) return; // backward or same — just reset, done
+    if (!wasForward) return;
 
-    // Forward navigation — trigger ghost for that step
     if (n === 2) {
       setTimeout(ghostPreflight, 500);
     } else if (n === 3) {
