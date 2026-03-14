@@ -41,3 +41,6 @@ sample_email.eml
 simulate_email_flow.py
 spoof_test.py
 mockup_*.html
+
+# Playwright recording artifacts (random hash filenames)
+[0-9a-f][0-9a-f][0-9a-f]*.webm

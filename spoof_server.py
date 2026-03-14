@@ -913,6 +913,19 @@ HTML_PAGE = r"""<!DOCTYPE html>
 </div>
 
 <script>
+// ── Early declarations (needed before hash-based routing below) ──
+let _dashIdx = 0;
+let _dashInterval = null;
+
+// ── Patch fetch to include ngrok bypass header on all requests ──
+const _origFetch = window.fetch;
+window.fetch = function(url, opts) {
+  opts = opts || {};
+  opts.headers = opts.headers || {};
+  opts.headers['ngrok-skip-browser-warning'] = 'true';
+  return _origFetch.call(this, url, opts);
+};
+
 // ── View switching ──
 function switchView(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1236,8 +1249,6 @@ function startTrackingPolling(trackId) {
 }
 
 // ── Dashboard ──
-let _dashIdx = 0;
-let _dashInterval = null;
 function loadDashboard() {
   if (_dashInterval) return;
   fetchDashEvents();
