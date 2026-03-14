@@ -47,6 +47,8 @@ mockup_*.html
 demo.webm
 demo.mp4
 
-# Demo assets (private — contains sensitive test data)
+# Demo assets and files (private — contains sensitive test data)
 .demo_assets/
 demo_config.py
+demo.py
+spoof_frontend.zip

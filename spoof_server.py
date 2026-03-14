@@ -351,6 +351,8 @@ def run_preflight(from_addr, to_addr, envelope_from):
 # ── Send Email (unchanged logic) ───────────────────────────────────
 def send_spoofed_email(from_addr, to_addr, envelope_from, subject, body_text, body_html, attachments, server_host="localhost"):
     log = []
+    if not envelope_from:
+        envelope_from = from_addr
     rcpt_domain = to_addr.split("@")[1]
 
     # Generate tracking pixel ID
@@ -1225,9 +1227,15 @@ async function runPreflight() {
     const d = await resp.json();
     _lastPreflight = d;
 
-    if (!d || !d.probe) {
-      setState('failed', 'Preflight failed — please check all fields');
-      container.innerHTML = '<div style="padding:1rem;color:#dc2626;">Preflight returned an unexpected response. Verify From and To addresses are valid.</div>';
+    if (!d || d.error) {
+      var errMsg = d && d.error ? d.error : 'Unexpected response from server';
+      setState('failed', 'Preflight failed');
+      container.innerHTML = '<div style="padding:1rem;color:#dc2626;">' + errMsg + '</div>';
+      return;
+    }
+    if (!d.probe) {
+      setState('failed', 'Preflight incomplete');
+      container.innerHTML = '<div style="padding:1rem;color:#dc2626;">Preflight returned incomplete data. Verify From and To addresses are valid.</div>';
       return;
     }
     const pred = d.probe.prediction;
