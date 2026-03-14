@@ -124,6 +124,20 @@ ffmpeg -i demo.webm -vf 'fps=8,scale=800:-1:flags=lanczos' -loop 0 demo.gif -y
 
 Override inputs by creating a `demo_config.py` (gitignored) — see `demo.py` for the expected exports.
 
+## Wait, you can just send email as someone else?
+
+Yes. And it's easier than most people think.
+
+Email was designed in the 1980s. The protocol that sends your messages (SMTP) has **no built-in way to verify who's actually sending.** It's like mailing a physical letter — you can write any return address you want. The post office doesn't check.
+
+Over the years, three systems were created to fix this: **SPF**, **DKIM**, and **DMARC**. They work by adding DNS records that tell receiving mail servers how to verify the sender.
+
+The problem? Millions of domains still haven't set these up, set them up wrong, or set them to "monitor only" instead of "reject." That means anyone can send email that *looks like* it came from those domains.
+
+Spoofy doesn't exploit anything. It doesn't hack into anyone's account. It simply does what any attacker could already do — connects to a mail server and says "I'm sending on behalf of example.com." If the receiving server accepts it, that's the vulnerability.
+
+> **If Spoofy can send an email as your domain, so can anyone else. That's the point.**
+
 ## FAQ
 
 <details>
