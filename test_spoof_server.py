@@ -21,6 +21,14 @@ SERVER_PROC = None
 PORT = None
 
 
+def setup_module(module):
+    start_server()
+
+
+def teardown_module(module):
+    stop_server()
+
+
 def find_free_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("", 0))
@@ -98,7 +106,7 @@ def test_homepage():
     check("has ngrok bar", 'id="ngrok-bar"' in html)
     check("has ngrok pill", 'id="ngrok-pill"' in html)
     check("has state bar", 'id="state-bar"' in html)
-    check("has state steps", 'id="step-0"' in html)
+    check("has wizard bar", 'id="wizard-bar"' in html)
     check("has preview iframe", 'id="preview-iframe-main"' in html)
     check("has DNS section", 'id="sec-dns"' in html)
     check("has SMTP Log section", 'id="sec-log"' in html)
@@ -106,6 +114,7 @@ def test_homepage():
     check("has setState function", "setState" in html)
     check("has checkNgrok function", "checkNgrok" in html)
     check("has startTrackingPolling", "startTrackingPolling" in html)
+    check("has goStep function", "goStep" in html)
 
 
 def test_status_endpoint():
@@ -233,8 +242,8 @@ def test_state_bar():
     check("CSS has .state-bar.working", ".state-bar.working" in html)
     check("CSS has .state-bar.failed", ".state-bar.failed" in html)
     check("CSS has .state-bar.success", ".state-bar.success" in html)
-    check("CSS has .state-step.done", ".state-step.done" in html)
-    check("CSS has .state-step.active", ".state-step.active" in html)
+    check("CSS has .wiz-step.done", ".wiz-step.done" in html)
+    check("CSS has .wiz-step.active", ".wiz-step.active" in html)
     check("JS setState function", "function setState" in html)
     check("JS resetState function", "function resetState" in html)
     check("setState called in preflight", "setState('working'" in html)
@@ -266,17 +275,18 @@ def test_ngrok_js():
 
 
 def test_view_tabs():
-    print("\n── View tabs (Send / Dashboard) ──")
+    print("\n── Wizard flow (Compose / Preflight / Monitor) ──")
     _, _, body = fetch("/")
     html = body.decode()
-    check("has Send view tab", "switchView('send')" in html)
-    check("has Dashboard view tab", "switchView('dashboard')" in html)
-    check("has view-send panel", 'id="view-send"' in html)
-    check("has view-dashboard panel", 'id="view-dashboard"' in html)
-    check("Send page active by default", 'page active" id="view-send"' in html)
-    check("Dashboard has stat cards", 'id="dash-sent"' in html)
-    check("Dashboard has feed container", 'id="dash-events"' in html)
+    check("has switchView function", "function switchView" in html)
+    check("has wizard step 1 (compose)", 'id="step-1"' in html)
+    check("has wizard step 2 (preflight)", 'id="step-2"' in html)
+    check("has wizard step 3 (monitor)", 'id="step-3"' in html)
+    check("Step 1 active by default", 'step-page active" id="step-1"' in html)
+    check("Monitor has stat cards", 'id="dash-sent"' in html)
+    check("Monitor has feed container", 'id="dash-events"' in html)
     check("Dashboard has live polling JS", "fetchDashEvents" in html)
+    check("has goStep wizard nav", "function goStep" in html)
 
 
 def test_password_gate():

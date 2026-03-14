@@ -44,3 +44,9 @@ mockup_*.html
 
 # Playwright recording artifacts (random hash filenames)
 [0-9a-f][0-9a-f][0-9a-f]*.webm
+demo.webm
+demo.mp4
+
+# Demo assets (private — contains sensitive test data)
+.demo_assets/
+demo_config.py

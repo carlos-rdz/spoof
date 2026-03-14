@@ -500,21 +500,23 @@ HTML_PAGE = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spoof</title>
+<title>Spoofy</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
     background: #f8faf8; color: #1a1a1a; min-height: 100vh;
+    display: flex; flex-direction: column;
   }
 
   .topbar {
     display: flex; justify-content: space-between; align-items: center;
     padding: .6rem 1.5rem; border-bottom: 1px solid #e0e8e0;
-    background: #fff;
+    background: #fff; flex-shrink: 0;
   }
   .topbar-left { display: flex; align-items: center; gap: 1rem; }
-  .brand { font-size: .85rem; font-weight: 700; color: #166534; }
+  .brand { font-size: 1.4rem; font-weight: 700; color: #166534; display: flex; align-items: center; gap: .5rem; }
+  .brand-logo { width: 52px; height: 52px; }
   .tabs { display: flex; }
   .tab {
     padding: .4rem .8rem; font-size: .72rem; color: #888;
@@ -531,15 +533,36 @@ HTML_PAGE = r"""<!DOCTYPE html>
   }
   .status-pill.off { background: #fef9ee; color: #a16207; border-color: #fde68a; }
 
-  .page { max-width: 720px; margin: 0 auto; padding: 1.5rem; display: none; }
-  .page.active { display: block; }
+  /* ── Wizard Steps ── */
+  .wizard-bar {
+    display: flex; align-items: center; gap: 0; padding: .5rem 1.5rem;
+    background: #fff; border-bottom: 1px solid #e0e8e0; flex-shrink: 0;
+  }
+  .wiz-step {
+    display: flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem; font-size: .68rem; color: #9ca3af;
+    cursor: pointer; position: relative; font-weight: 500;
+  }
+  .wiz-step .wiz-num {
+    width: 20px; height: 20px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: .58rem;
+    font-weight: 700; background: #f3f4f6; color: #9ca3af; flex-shrink: 0;
+  }
+  .wiz-step.active { color: #166534; }
+  .wiz-step.active .wiz-num { background: #22c55e; color: #fff; }
+  .wiz-step.done { color: #15803d; }
+  .wiz-step.done .wiz-num { background: #dcfce7; color: #15803d; }
+  .wiz-sep {
+    width: 32px; height: 1px; background: #e0e8e0; flex-shrink: 0;
+  }
+  .wiz-sep.done { background: #22c55e; }
 
-  /* State bar */
+  /* ── State bar ── */
   .state-bar {
     display: flex; align-items: center; gap: .5rem;
-    padding: .6rem .8rem; border-radius: 8px; margin-bottom: 1.2rem;
-    background: #f9fafb; border: 1px solid #e5e7eb;
-    font-size: .72rem; color: #9ca3af;
+    padding: .5rem 1rem; margin: 0;
+    background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+    font-size: .72rem; color: #9ca3af; flex-shrink: 0;
   }
   .state-dot {
     width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: #d1d5db;
@@ -552,49 +575,66 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .state-bar.failed .state-dot { background: #ef4444; }
   .state-bar.success { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
   .state-bar.success .state-dot { background: #22c55e; }
-  .state-steps {
-    margin-left: auto; display: flex; gap: 2px; align-items: center;
-  }
-  .state-step { width: 24px; height: 3px; border-radius: 2px; background: #e0e8e0; }
-  .state-step.done { background: #22c55e; }
-  .state-step.active { background: #3b82f6; }
-  .state-step.fail { background: #ef4444; }
   @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
 
-  /* Form */
+  /* ── Main content ── */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+  .step-page { display: none; padding: 1.2rem 1.5rem; flex: 1; }
+  .step-page.active { display: flex; flex-direction: column; }
+
+  /* ── Step 1: Compose ── */
+  .compose-layout { display: flex; gap: 1.2rem; flex: 1; }
+  .compose-left { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .compose-right { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+
   .form-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: .6rem .8rem;
-    margin-bottom: .8rem;
+    display: grid; grid-template-columns: 1fr 1fr; gap: .5rem .7rem;
+    margin-bottom: .6rem;
   }
   .form-grid .full { grid-column: 1 / -1; }
   .field label {
-    display: block; font-size: .62rem; font-weight: 600; color: #6b7280;
-    margin-bottom: .25rem; text-transform: uppercase; letter-spacing: .04em;
+    display: block; font-size: .6rem; font-weight: 600; color: #6b7280;
+    margin-bottom: .2rem; text-transform: uppercase; letter-spacing: .04em;
   }
   .field input, .field textarea {
     width: 100%; background: #fff; border: 1px solid #d1d9d1;
-    border-radius: 6px; padding: .5rem .6rem; color: #1a1a1a;
-    font-size: .78rem; font-family: inherit;
+    border-radius: 6px; padding: .45rem .55rem; color: #1a1a1a;
+    font-size: .75rem; font-family: inherit;
   }
   .field input:focus, .field textarea:focus { outline: none; border-color: #22c55e; box-shadow: 0 0 0 3px #22c55e15; }
   .field input::placeholder, .field textarea::placeholder { color: #b0b8b0; }
-  .field textarea { resize: vertical; min-height: 48px; font-family: 'SF Mono', Menlo, monospace; font-size: .7rem; }
+  .field textarea { resize: vertical; min-height: 120px; font-family: 'SF Mono', Menlo, monospace; font-size: .68rem; }
 
-  .toggle-row {
-    display: flex; align-items: center; gap: .35rem; font-size: .68rem; color: #6b7280;
-    margin-bottom: .6rem;
+  .preview-label {
+    font-size: .6rem; font-weight: 600; color: #6b7280; text-transform: uppercase;
+    letter-spacing: .04em; margin-bottom: .3rem;
   }
-  .toggle-row input { accent-color: #22c55e; }
-
-  /* Preview iframe */
   .preview-frame {
-    width: 100%; height: 140px; border: 1px solid #e0e8e0; border-radius: 6px;
-    background: #fff; margin-bottom: .8rem;
+    flex: 1; min-height: 180px; border: 1px solid #e0e8e0; border-radius: 6px;
+    background: #fff; width: 100%;
   }
 
-  .actions { display: flex; gap: .5rem; margin-bottom: 1.2rem; }
+  .file-drop {
+    border: 1px dashed #d1d9d1; border-radius: 6px; padding: .4rem;
+    text-align: center; font-size: .62rem; color: #9ca3af; cursor: pointer;
+    margin-top: .5rem;
+  }
+  .file-drop:hover { border-color: #86efac; background: #f0fdf4; }
+  .file-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .2rem .4rem; font-size: .62rem; color: #555; background: #f9fafb;
+    border-radius: 4px; margin-top: .25rem;
+  }
+  .file-item .remove { cursor: pointer; color: #dc2626; font-size: .58rem; }
+
+  .compose-actions {
+    display: flex; justify-content: flex-end; gap: .5rem; margin-top: .8rem;
+    padding-top: .6rem; border-top: 1px solid #e0e8e0;
+  }
+
+  /* ── Buttons ── */
   .btn {
-    padding: .55rem 1.2rem; border-radius: 6px; font-size: .75rem; font-weight: 600;
+    padding: .5rem 1.1rem; border-radius: 6px; font-size: .72rem; font-weight: 600;
     cursor: pointer; font-family: inherit; border: 1px solid;
   }
   .btn-secondary { background: #fff; border-color: #d1d9d1; color: #555; }
@@ -604,23 +644,28 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .btn.sending { opacity: .6; pointer-events: none; }
   .btn.success { background: #16a34a; border-color: #16a34a; }
 
-  /* Password inline */
-  .pw-inline { display: none; align-items: center; gap: .4rem; margin-bottom: 1.2rem; }
+  /* ── Password inline ── */
+  .pw-inline { display: none; align-items: center; gap: .4rem; }
   .pw-inline.show { display: flex; }
   .pw-inline input {
     background: #fff; border: 1px solid #d1d9d1; border-radius: 6px;
-    padding: .45rem .6rem; font-size: .75rem; width: 160px; font-family: inherit;
+    padding: .4rem .55rem; font-size: .72rem; width: 150px; font-family: inherit;
   }
   .pw-inline input:focus { outline: none; border-color: #22c55e; }
   .pw-inline button {
-    padding: .45rem .8rem; border: none; border-radius: 6px;
-    background: #22c55e; color: #fff; font-size: .7rem; font-weight: 600;
+    padding: .4rem .7rem; border: none; border-radius: 6px;
+    background: #22c55e; color: #fff; font-size: .68rem; font-weight: 600;
     cursor: pointer; font-family: inherit;
   }
   .pw-inline button:hover { background: #16a34a; }
-  .pw-err { color: #dc2626; font-size: .6rem; min-height: .8rem; }
+  .pw-err { color: #dc2626; font-size: .58rem; min-height: .7rem; }
 
-  /* Collapsible sections */
+  /* ── Step 2: Preflight ── */
+  .preflight-layout { display: flex; gap: 1rem; flex: 1; }
+  .preflight-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .preflight-col .section { flex: 1; display: flex; flex-direction: column; }
+  .preflight-col .section.open .section-body { flex: 1; }
+
   .section {
     border: 1px solid #e0e8e0; border-radius: 8px; overflow: hidden;
     margin-bottom: .8rem; background: #fff;
@@ -636,7 +681,7 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .section.open .section-header .arrow { transform: rotate(90deg); }
   .section-badges { display: flex; gap: .3rem; }
   .section-badge {
-    font-size: .55rem; padding: .12rem .4rem; border-radius: 100px; font-weight: 700;
+    font-size: .52rem; padding: .1rem .35rem; border-radius: 100px; font-weight: 700;
   }
   .badge-ok { background: #dcfce7; color: #15803d; }
   .badge-warn { background: #fef3c7; color: #a16207; }
@@ -645,9 +690,9 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .badge-none { background: #f3f4f6; color: #6b7280; }
   .section-body {
     display: none;
-    padding: .7rem; font-family: 'SF Mono', Menlo, monospace; font-size: .65rem;
+    padding: .6rem; font-family: 'SF Mono', Menlo, monospace; font-size: .62rem;
     line-height: 1.6; color: #6b7280; border-top: 1px solid #e0e8e0;
-    max-height: 280px; overflow-y: auto;
+    max-height: 400px; overflow-y: auto;
   }
   .section.open .section-body { display: block; }
   .section-body .g { color: #16a34a; }
@@ -656,22 +701,10 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .section-body .y { color: #ca8a04; }
   .section-body .d { color: #c0c8c0; }
 
-  .dns-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; font-family: inherit; }
-  .dns-card {
-    background: #fafcfa; border: 1px solid #e8f0e8; border-radius: 6px; padding: .5rem;
-  }
-  .dns-card h4 {
-    font-size: .6rem; color: #6b7280; text-transform: uppercase; letter-spacing: .04em;
-    margin-bottom: .3rem; display: flex; justify-content: space-between;
-  }
-  .dns-card p { font-size: .65rem; color: #555; line-height: 1.4; word-break: break-all; }
-  .dns-card code { font-size: .6rem; background: #f0f4f0; padding: .08rem .2rem; border-radius: 3px; color: #1a1a1a; }
-
-  /* Probe steps */
-  .probe-steps { display: flex; gap: .3rem; margin-bottom: .6rem; flex-wrap: wrap; }
+  .probe-steps { display: flex; gap: .3rem; margin-bottom: .5rem; flex-wrap: wrap; }
   .probe-step {
     display: flex; align-items: center; gap: .3rem;
-    padding: .25rem .5rem; border-radius: 6px; font-size: .6rem;
+    padding: .2rem .45rem; border-radius: 6px; font-size: .58rem;
     background: #f3f4f6; color: #6b7280; font-family: inherit;
   }
   .probe-step.ok { background: #dcfce7; color: #15803d; }
@@ -680,23 +713,24 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .probe-step .label { font-weight: 600; }
   .probe-step .status { font-family: 'SF Mono', Menlo, monospace; }
 
-  .pf-badge { font-size: .5rem; padding: .1rem .3rem; border-radius: 100px; font-weight: 700; vertical-align: middle; }
+  .pf-badge { font-size: .48rem; padding: .08rem .28rem; border-radius: 100px; font-weight: 700; vertical-align: middle; }
   .pf-badge.pass { background: #dcfce7; color: #15803d; }
   .pf-badge.warn { background: #fef3c7; color: #a16207; }
   .pf-badge.fail { background: #fee2e2; color: #dc2626; }
   .pf-badge.info { background: #dbeafe; color: #1d4ed8; }
   .pf-badge.none { background: #f3f4f6; color: #6b7280; }
 
-  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+  .pf-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
   .pf-card {
-    background: #fafcfa; border: 1px solid #e8f0e8; border-radius: 6px; padding: .5rem;
+    background: #fafcfa; border: 1px solid #e8f0e8; border-radius: 6px; padding: .4rem;
   }
-  .pf-card h3 { font-size: .62rem; margin-bottom: .2rem; }
-  .pf-card p { font-size: .6rem; color: #555; line-height: 1.4; word-break: break-all; }
-  .pf-card code { font-size: .58rem; background: #f0f4f0; padding: .08rem .2rem; border-radius: 3px; color: #1a1a1a; }
+  .pf-card h3 { font-size: .58rem; margin-bottom: .15rem; }
+  .pf-card p { font-size: .58rem; color: #555; line-height: 1.4; word-break: break-all; }
+  .pf-card code { font-size: .55rem; background: #f0f4f0; padding: .05rem .15rem; border-radius: 3px; color: #1a1a1a; }
+  .pf-placeholder { text-align: center; padding: 1.5rem 1rem; color: #9ca3af; font-size: .72rem; font-family: inherit; }
 
   .log-output {
-    font-family: 'SF Mono', Menlo, monospace; font-size: .65rem;
+    font-family: 'SF Mono', Menlo, monospace; font-size: .62rem;
     line-height: 1.6; white-space: pre-wrap; color: #6b7280;
   }
   .log-output .header { color: #1d4ed8; font-weight: 600; }
@@ -704,55 +738,36 @@ HTML_PAGE = r"""<!DOCTYPE html>
   .log-output .error { color: #dc2626; }
   .log-output .warn { color: #ca8a04; }
 
-  .pf-placeholder { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: .75rem; font-family: inherit; }
-
-  /* Tracker events */
-  .open-event {
-    display: flex; align-items: center; gap: .5rem; padding: .35rem 0;
-    border-bottom: 1px solid #f0f4f0; font-size: .7rem;
+  .preflight-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: .6rem; padding-top: .5rem; border-top: 1px solid #e0e8e0;
   }
-  .open-event:last-child { border-bottom: none; }
-  .open-event .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; flex-shrink: 0; }
-  .open-event.waiting .dot { background: #d1d5db; animation: none; }
-  .open-event .time { color: #16a34a; font-family: 'SF Mono', Menlo, monospace; font-size: .65rem; min-width: 60px; }
-  .open-event.waiting .time { color: #9ca3af; }
-  .open-event .detail { color: #6b7280; }
 
-  /* File attachments */
-  .file-drop { border: 1px dashed #d1d9d1; border-radius: 6px; padding: .5rem; text-align: center; font-size: .65rem; color: #9ca3af; cursor: pointer; margin-bottom: .6rem; }
-  .file-drop:hover { border-color: #86efac; background: #f0fdf4; }
-  .file-item { display: flex; justify-content: space-between; align-items: center; padding: .25rem .4rem; font-size: .65rem; color: #555; background: #f9fafb; border-radius: 4px; margin-top: .3rem; }
-  .file-item .remove { cursor: pointer; color: #dc2626; font-size: .6rem; }
-
-  /* ── Dashboard styles ── */
-  .dash-stats {
-    display: flex; gap: 1rem; margin-bottom: 1.5rem;
-  }
+  /* ── Step 3: Dashboard ── */
+  .dash-stats { display: flex; gap: .8rem; margin-bottom: 1.2rem; }
   .stat-card {
     flex: 1; background: #fff; border: 1px solid #e0e8e0; border-radius: 8px;
-    padding: 1rem; text-align: center;
+    padding: .8rem; text-align: center;
   }
   .stat-card .num {
-    font-size: 1.8rem; font-weight: 700;
+    font-size: 1.6rem; font-weight: 700;
     font-family: 'SF Mono', Menlo, monospace;
   }
-  .stat-card .label { font-size: .62rem; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin-top: .2rem; }
+  .stat-card .label { font-size: .58rem; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin-top: .15rem; }
   .stat-sends .num { color: #166534; }
   .stat-opens .num { color: #22c55e; }
   .stat-rate .num { color: #a16207; }
 
   .dash-feed h2 {
-    font-size: .65rem; color: #9ca3af; text-transform: uppercase;
-    letter-spacing: .06em; margin-bottom: .8rem;
-    padding-bottom: .4rem; border-bottom: 1px solid #e0e8e0;
+    font-size: .62rem; color: #9ca3af; text-transform: uppercase;
+    letter-spacing: .06em; margin-bottom: .6rem;
+    padding-bottom: .35rem; border-bottom: 1px solid #e0e8e0;
   }
-  .feed-empty {
-    text-align: center; padding: 3rem 1rem; color: #9ca3af; font-size: .8rem;
-  }
+  .feed-empty { text-align: center; padding: 2rem 1rem; color: #9ca3af; font-size: .75rem; }
   .dash-event {
-    display: flex; align-items: flex-start; gap: .8rem;
-    padding: .6rem .5rem; border-radius: 8px;
-    margin-bottom: .3rem; animation: slideIn .3s ease-out;
+    display: flex; align-items: flex-start; gap: .7rem;
+    padding: .5rem .4rem; border-radius: 8px;
+    margin-bottom: .2rem; animation: slideIn .3s ease-out;
   }
   .dash-event:hover { background: #f0fdf4; }
   @keyframes slideIn {
@@ -760,131 +775,254 @@ HTML_PAGE = r"""<!DOCTYPE html>
     to { opacity: 1; transform: translateY(0); }
   }
   .ev-icon {
-    width: 28px; height: 28px; border-radius: 6px;
+    width: 26px; height: 26px; border-radius: 6px;
     display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0; font-size: .75rem;
+    flex-shrink: 0; font-size: .7rem;
   }
   .ev-send .ev-icon { background: #dbeafe; }
   .ev-open .ev-icon { background: #dcfce7; }
   .ev-body { flex: 1; min-width: 0; }
-  .ev-title { font-size: .75rem; font-weight: 500; margin-bottom: .1rem; color: #1a1a1a; }
+  .ev-title { font-size: .72rem; font-weight: 500; margin-bottom: .05rem; color: #1a1a1a; }
   .ev-detail {
-    font-size: .65rem; color: #9ca3af;
+    font-size: .62rem; color: #9ca3af;
     font-family: 'SF Mono', Menlo, monospace;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .ev-time {
-    font-size: .55rem; color: #b0b8b0; flex-shrink: 0;
+    font-size: .52rem; color: #b0b8b0; flex-shrink: 0;
     font-family: 'SF Mono', Menlo, monospace;
   }
 
+  /* Open tracking in dashboard */
+  .open-event {
+    display: flex; align-items: center; gap: .5rem; padding: .3rem 0;
+    border-bottom: 1px solid #f0f4f0; font-size: .68rem;
+  }
+  .open-event:last-child { border-bottom: none; }
+  .open-event .dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; animation: pulse 1.5s infinite; flex-shrink: 0; }
+  .open-event.waiting .dot { background: #d1d5db; animation: none; }
+  .open-event .time { color: #16a34a; font-family: 'SF Mono', Menlo, monospace; font-size: .62rem; min-width: 55px; }
+  .open-event.waiting .time { color: #9ca3af; }
+  .open-event .detail { color: #6b7280; }
+
   /* Ngrok footer */
   .ngrok-footer {
-    text-align: center; padding: .5rem; font-size: .55rem; color: #b0b8b0;
+    text-align: center; padding: .4rem; font-size: .52rem; color: #b0b8b0;
+    flex-shrink: 0;
   }
   .ngrok-footer a { color: #22c55e; }
+  .ngrok-footer .promo { color: #d0d8d0; font-style: italic; }
+
+  /* Transition animation */
+  .step-page { animation: fadeIn .25s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Ghost mascot — fixed fade: 0.8s in, 1s out */
+  .ghost-mascot {
+    position: fixed; z-index: 9998; pointer-events: none;
+    width: 54px; height: 63px;
+    transition: left 1s cubic-bezier(.25,.46,.45,.94), top 1s cubic-bezier(.25,.46,.45,.94), opacity 0.8s ease;
+    opacity: 0;
+  }
+  .ghost-mascot.fade-in { opacity: 0.9; transition: left 1s cubic-bezier(.25,.46,.45,.94), top 1s cubic-bezier(.25,.46,.45,.94), opacity 0.8s ease-in; }
+  .ghost-mascot.solid { opacity: 1 !important; transition: none; }
+  .ghost-mascot.fade-out { opacity: 0; transition: left 1s cubic-bezier(.25,.46,.45,.94), top 1s cubic-bezier(.25,.46,.45,.94), opacity 1s ease-out; }
+  .ghost-mascot.returning {
+    transition: left 2.8s cubic-bezier(.25,.46,.45,.94), top 2.8s cubic-bezier(.25,.46,.45,.94), opacity 1s ease-out;
+    opacity: 0;
+  }
+  .ghost-mascot.wiggle { animation: ghostWiggle 0.4s ease-in-out 3; }
+  @keyframes ghostWiggle {
+    0%,100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1) rotate(-8deg); }
+    75% { transform: scale(1) rotate(8deg); }
+  }
+  /* Brand logo ghost — fades when mascot leaves */
+  .brand-logo.ghost-away { opacity: 0; transition: opacity 0.6s ease-out; }
+  .brand-logo.ghost-home { opacity: 1; transition: opacity 0.4s ease-in; }
+  /* Esmokin text — fixed in place, fades independently */
+  .esmokin-text {
+    position: fixed; z-index: 9999; pointer-events: none;
+    font-size: 15px; font-weight: 800; color: #166534;
+    white-space: nowrap; transform: translateX(-50%);
+    animation: esmokinFade 3s ease-out forwards;
+  }
+  @keyframes esmokinFade {
+    0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+    6% { opacity: 1; transform: translateX(-50%) scale(1.15); }
+    50% { opacity: 1; transform: translateX(-50%) scale(1); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-14px) scale(0.9); }
+  }
+
+  /* Ambient background system */
+  #ambient-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.96;
+  }
+  /* Faint atmospheric wash for haunted depth */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(760px 480px at 12% 18%, rgba(34,197,94,0.040), transparent 72%),
+      radial-gradient(980px 600px at 84% 76%, rgba(22,101,52,0.034), transparent 74%),
+      radial-gradient(560px 320px at 52% 42%, rgba(156,163,175,0.022), transparent 70%),
+      radial-gradient(420px 220px at 72% 22%, rgba(34,197,94,0.018), transparent 75%);
+  }
 </style>
 </head>
-<body>
+<body class="step-1">
+
+<canvas id="ambient-canvas"></canvas>
+<div class="ghost-mascot" id="ghost-mascot">
+  <svg viewBox="0 0 28 32" xmlns="http://www.w3.org/2000/svg">
+    <path d="M14 2C8.5 2 4 6.5 4 12v14l3.5-3.5L11 26l3-3.5L17 26l3.5-3.5L24 26V12C24 6.5 19.5 2 14 2z" fill="#22c55e"/>
+    <ellipse cx="10.5" cy="13" rx="2.5" ry="2.8" fill="#166534"/>
+    <ellipse cx="17.5" cy="13" rx="2.5" ry="2.8" fill="#166534"/>
+  </svg>
+</div>
 
 <div class="topbar">
   <div class="topbar-left">
-    <div class="brand">Spoof</div>
-    <div class="tabs">
-      <button class="tab active" onclick="switchView('send')">Send</button>
-      <button class="tab" onclick="switchView('dashboard')">Dashboard</button>
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 28 32" xmlns="http://www.w3.org/2000/svg">
+        <!-- ghost body with pronounced tails -->
+        <path d="M14 2C8.5 2 4 6.5 4 12v14l3.5-3.5L11 26l3-3.5L17 26l3.5-3.5L24 26V12C24 6.5 19.5 2 14 2z" fill="#22c55e"/>
+        <!-- eyes -->
+        <ellipse cx="10.5" cy="13" rx="2.5" ry="2.8" fill="#166534"/>
+        <ellipse cx="17.5" cy="13" rx="2.5" ry="2.8" fill="#166534"/>
+      </svg>
+      Spoofy
     </div>
   </div>
   <div class="status-pill off" id="ngrok-pill">ngrok disconnected</div>
 </div>
 
-<!-- ── Send View ── -->
-<div class="page active" id="view-send">
-  <div class="state-bar" id="state-bar">
-    <div class="state-dot"></div>
-    <span id="state-text">Ready to send</span>
-    <div class="state-steps">
-      <div class="state-step" id="step-0"></div>
-      <div class="state-step" id="step-1"></div>
-      <div class="state-step" id="step-2"></div>
-      <div class="state-step" id="step-3"></div>
-      <div class="state-step" id="step-4"></div>
-    </div>
-  </div>
+<!-- Wizard progress -->
+<div class="wizard-bar" id="wizard-bar">
+  <div class="wiz-step active" id="wiz-1" onclick="goStep(1)"><span class="wiz-num">1</span> Compose</div>
+  <div class="wiz-sep" id="wiz-sep-1"></div>
+  <div class="wiz-step" id="wiz-2" onclick="goStep(2)"><span class="wiz-num">2</span> Preflight / Send</div>
+  <div class="wiz-sep" id="wiz-sep-2"></div>
+  <div class="wiz-step" id="wiz-3" onclick="goStep(3)"><span class="wiz-num">3</span> Monitor</div>
+</div>
 
-  <div class="form-grid">
-    <div class="field">
-      <label>From (spoofed)</label>
-      <input id="from_addr" placeholder="sender@example.com">
-    </div>
-    <div class="field">
-      <label>Envelope / Return-Path</label>
-      <input id="envelope_from" placeholder="bounce@example.com">
-    </div>
-    <div class="field">
-      <label>To</label>
-      <input id="to_addr" placeholder="user@recipient.com">
-    </div>
-    <div class="field">
-      <label>Subject</label>
-      <input id="subject" placeholder="Subject line">
-    </div>
-    <div class="field full">
-      <label>Body (text)</label>
-      <input id="body_text" placeholder="Plain text fallback">
-    </div>
-  </div>
+<!-- State bar -->
+<div class="state-bar" id="state-bar">
+  <div class="state-dot"></div>
+  <span id="state-text">Ready to send</span>
+</div>
 
-  <div class="toggle-row">
-    <input type="checkbox" id="use_html" checked> Include HTML body
-  </div>
-  <div class="field full" id="html-field" style="margin-bottom: .8rem;">
-    <textarea id="body_html" rows="3">&lt;div style="font-family:Arial;padding:20px"&gt;
-  &lt;h2&gt;Hello&lt;/h2&gt;
-  &lt;p&gt;This is a test email. Edit to customize.&lt;/p&gt;
+<div class="main">
+
+<!-- ══ Step 1: Compose ══ -->
+<div class="step-page active" id="step-1">
+  <div class="compose-layout">
+    <div class="compose-left">
+      <div class="form-grid">
+        <div class="field">
+          <label>From (spoofed)</label>
+          <input id="from_addr" placeholder="sender@example.com">
+        </div>
+        <div class="field">
+          <label>Envelope / Return-Path</label>
+          <input id="envelope_from" placeholder="bounce@example.com">
+        </div>
+        <div class="field">
+          <label>To</label>
+          <input id="to_addr" placeholder="user@recipient.com">
+        </div>
+        <div class="field">
+          <label>Subject</label>
+          <input id="subject" placeholder="Subject line">
+        </div>
+        <div class="field full">
+          <label>HTML Body</label>
+          <textarea id="body_html" rows="6">&lt;div style="font-family:system-ui,-apple-system,sans-serif;max-width:540px;margin:0 auto;padding:32px 24px;color:#1a1a1a"&gt;
+  &lt;div style="border-left:3px solid #22c55e;padding-left:14px;margin-bottom:20px"&gt;
+    &lt;h2 style="margin:0 0 4px;font-size:18px;font-weight:700"&gt;Your subject here&lt;/h2&gt;
+    &lt;p style="margin:0;font-size:13px;color:#6b7280"&gt;From: whoever you want&lt;/p&gt;
+  &lt;/div&gt;
+  &lt;p style="font-size:15px;line-height:1.6;color:#374151"&gt;This is your canvas. Write anything. The recipient will see exactly what you design here — HTML, images, links, all of it.&lt;/p&gt;
+  &lt;p style="font-size:13px;color:#9ca3af;margin-top:24px;border-top:1px solid #e5e7eb;padding-top:12px"&gt;Sent via Spoofy — for educational purposes only.&lt;/p&gt;
 &lt;/div&gt;</textarea>
-  </div>
-
-  <iframe id="preview-iframe-main" class="preview-frame" sandbox></iframe>
-
-  <div class="file-drop" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#22c55e'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handleFiles(event.dataTransfer.files)">
-    Drop attachments or click to add
-    <input type="file" id="file-input" multiple hidden onchange="handleFiles(this.files)">
-  </div>
-  <div id="file-list"></div>
-
-  <div class="actions">
-    <button class="btn btn-secondary" id="probe-btn" onclick="runPreflight()">Preflight</button>
-    <button class="btn btn-primary" id="send-btn" onclick="requirePassword(sendEmail)">Send</button>
-  </div>
-
-  <div class="pw-inline" id="pw-inline">
-    <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPassword()">
-    <button onclick="checkPassword()">Go</button>
-    <span class="pw-err" id="pw-err"></span>
-  </div>
-
-  <div class="section" id="sec-dns">
-    <div class="section-header" onclick="toggleSection('sec-dns')">
-      <span><span class="arrow">&#9654;</span> DNS &amp; Preflight</span>
-      <div class="section-badges" id="dns-badges"></div>
+        </div>
+      </div>
+      <div class="file-drop" onclick="document.getElementById('file-input').click()" ondragover="event.preventDefault();this.style.borderColor='#22c55e'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handleFiles(event.dataTransfer.files)">
+        Drop attachments or click to add
+        <input type="file" id="file-input" multiple hidden onchange="handleFiles(this.files)">
+      </div>
+      <div id="file-list"></div>
     </div>
-    <div class="section-body" id="dns-results">
-      <div class="pf-placeholder">Run preflight to see DNS records</div>
+    <div class="compose-right">
+      <div class="preview-label">Preview</div>
+      <iframe id="preview-iframe-main" class="preview-frame" sandbox></iframe>
     </div>
   </div>
+  <div class="compose-actions">
+    <button class="btn btn-primary" id="probe-btn" onclick="runPreflight()">Run Preflight &#8594;</button>
+  </div>
+</div>
 
-  <div class="section" id="sec-log">
-    <div class="section-header" onclick="toggleSection('sec-log')">
-      <span><span class="arrow">&#9654;</span> SMTP Log</span>
-      <div class="section-badges" id="log-badges"></div>
+<!-- ══ Step 2: Preflight & Confirm ══ -->
+<div class="step-page" id="step-2">
+  <div class="preflight-layout">
+    <div class="preflight-col">
+      <div class="section open" id="sec-dns">
+        <div class="section-header" onclick="toggleSection('sec-dns')">
+          <span><span class="arrow">&#9654;</span> DNS &amp; Preflight</span>
+          <div class="section-badges" id="dns-badges"></div>
+        </div>
+        <div class="section-body" id="dns-results">
+          <div class="pf-placeholder">Run preflight to see DNS records</div>
+        </div>
+      </div>
     </div>
-    <div class="section-body" id="log-output">
-      <div class="pf-placeholder">Send an email to see the SMTP log</div>
+    <div class="preflight-col">
+      <div class="section open" id="sec-log">
+        <div class="section-header" onclick="toggleSection('sec-log')">
+          <span><span class="arrow">&#9654;</span> SMTP Log</span>
+          <div class="section-badges" id="log-badges"></div>
+        </div>
+        <div class="section-body" id="log-output">
+          <div class="pf-placeholder">Send an email to see the SMTP log</div>
+        </div>
+      </div>
     </div>
   </div>
+  <div class="preflight-actions">
+    <button class="btn btn-secondary" onclick="goStep(1)">&#8592; Back to Compose</button>
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <div class="pw-inline" id="pw-inline">
+        <input type="password" id="pw-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkPassword()">
+        <button onclick="checkPassword()">Go</button>
+        <span class="pw-err" id="pw-err"></span>
+      </div>
+      <button class="btn btn-primary" id="send-btn" onclick="requirePassword(sendEmail)">Confirm &amp; Send &#8594;</button>
+    </div>
+  </div>
+</div>
 
-  <div class="section" id="sec-track">
+<!-- ══ Step 3: Dashboard ══ -->
+<div class="step-page" id="step-3">
+  <div class="dash-stats">
+    <div class="stat-card stat-sends"><div class="num" id="dash-sent">0</div><div class="label">Sent</div></div>
+    <div class="stat-card stat-opens"><div class="num" id="dash-opens">0</div><div class="label">Opens</div></div>
+    <div class="stat-card stat-rate"><div class="num" id="dash-rate">0%</div><div class="label">Rate</div></div>
+  </div>
+
+  <div class="section open" id="sec-track">
     <div class="section-header" onclick="toggleSection('sec-track')">
       <span><span class="arrow">&#9654;</span> Open Tracking</span>
       <div class="section-badges" id="track-badges"></div>
@@ -893,31 +1031,28 @@ HTML_PAGE = r"""<!DOCTYPE html>
       <div class="pf-placeholder">Tracking events will appear here after send</div>
     </div>
   </div>
-</div>
 
-<!-- ── Dashboard View ── -->
-<div class="page" id="view-dashboard">
-  <div class="dash-stats">
-    <div class="stat-card stat-sends"><div class="num" id="dash-sent">0</div><div class="label">Sent</div></div>
-    <div class="stat-card stat-opens"><div class="num" id="dash-opens">0</div><div class="label">Opens</div></div>
-    <div class="stat-card stat-rate"><div class="num" id="dash-rate">0%</div><div class="label">Rate</div></div>
-  </div>
   <div class="dash-feed">
     <h2>Activity</h2>
     <div id="dash-events"><div class="feed-empty">No events yet — send an email to get started</div></div>
   </div>
 </div>
 
+</div><!-- .main -->
+
 <div class="ngrok-footer" id="ngrok-bar">
   <span id="ngrok-text">No ngrok tunnel &mdash; run <strong>ngrok http 8090</strong> for open tracking</span>
+  <span class="promo">&nbsp;&nbsp;&bull;&nbsp;&nbsp;Spoofy Mobile &mdash; coming to the App Store never&trade;</span>
 </div>
+<div style="text-align:center;padding:6px 20px;font-size:10px;color:#c8cec8;letter-spacing:0.3px;">educational use only &mdash; don't be weird</div>
 
 <script>
-// ── Early declarations (needed before hash-based routing below) ──
+// ── Early declarations ──
 let _dashIdx = 0;
 let _dashInterval = null;
+let _currentStep = 1;
 
-// ── Patch fetch to include ngrok bypass header on all requests ──
+// ── Patch fetch for ngrok bypass ──
 const _origFetch = window.fetch;
 window.fetch = function(url, opts) {
   opts = opts || {};
@@ -926,21 +1061,40 @@ window.fetch = function(url, opts) {
   return _origFetch.call(this, url, opts);
 };
 
+// ── Wizard navigation ──
+function goStep(n) {
+  _currentStep = n;
+  document.querySelectorAll('.step-page').forEach(p => p.classList.remove('active'));
+  document.getElementById('step-' + n).classList.add('active');
+
+  // Animate background floats
+  document.body.className = 'step-' + n;
+
+  // Update wizard bar
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('wiz-' + i);
+    el.classList.remove('active', 'done');
+    if (i === n) el.classList.add('active');
+    else if (i < n) el.classList.add('done');
+  }
+  for (let i = 1; i <= 2; i++) {
+    const sep = document.getElementById('wiz-sep-' + i);
+    sep.classList.toggle('done', i < n);
+  }
+
+  // Show wizard bar for send flow, hide for dashboard tab
+  document.getElementById('wizard-bar').style.display = 'flex';
+
+  if (n === 3) loadDashboard();
+}
+
 // ── View switching ──
 function switchView(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  if (name === 'send') {
-    document.getElementById('view-send').classList.add('active');
-    document.querySelectorAll('.tab')[0].classList.add('active');
-  } else {
-    document.getElementById('view-dashboard').classList.add('active');
-    document.querySelectorAll('.tab')[1].classList.add('active');
-    loadDashboard();
-  }
+  if (name === 'send') goStep(_currentStep);
+  else goStep(3);
 }
 // Handle /#dashboard direct link
-if (location.hash === '#dashboard') switchView('dashboard');
+if (location.hash === '#dashboard') goStep(3);
 
 // ── Section toggle ──
 function toggleSection(id) {
@@ -948,20 +1102,14 @@ function toggleSection(id) {
 }
 
 // ── State bar ──
-const STEPS = ['step-0','step-1','step-2','step-3','step-4'];
-function setState(cls, text, stepStates) {
+function setState(cls, text) {
   const bar = document.getElementById('state-bar');
   bar.className = 'state-bar ' + cls;
   document.getElementById('state-text').textContent = text;
-  if (stepStates) {
-    stepStates.forEach((s, i) => {
-      document.getElementById(STEPS[i]).className = 'state-step ' + (s || '');
-    });
-  }
 }
-function resetState() { setState('', 'Ready to send', ['','','','','']); }
+function resetState() { setState('', 'Ready to send'); }
 
-// ── Password gate (send button only) ──
+// ── Password gate ──
 let _unlocked = false;
 let _pendingAction = null;
 function requirePassword(action) {
@@ -1022,23 +1170,14 @@ function renderFileList() {
 // ── Preview ──
 function updatePreview() {
   const iframe = document.getElementById('preview-iframe-main');
-  const useHtml = document.getElementById('use_html').checked;
   const html = document.getElementById('body_html').value;
-  const text = document.getElementById('body_text').value;
-  if (useHtml && html.trim()) {
+  if (html.trim()) {
     iframe.srcdoc = html;
-  } else if (text.trim()) {
-    iframe.srcdoc = '<pre style="font-family:sans-serif;padding:16px;margin:0">' + text.replace(/</g,'&lt;') + '</pre>';
   } else {
-    iframe.srcdoc = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-family:sans-serif">Compose a body to see preview</div>';
+    iframe.srcdoc = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-family:Arial,sans-serif;color:#d1d5db;"><div style="font-size:48px;margin-bottom:12px;opacity:0.2;">&#128123;</div><div style="font-size:13px;font-weight:600;color:#a1a7b0;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">Live Preview</div><div style="font-size:11px;color:#c4c9d1;">Your email will render here as you type</div></div>';
   }
 }
 document.getElementById('body_html').addEventListener('input', updatePreview);
-document.getElementById('body_text').addEventListener('input', updatePreview);
-document.getElementById('use_html').addEventListener('change', function() {
-  document.getElementById('html-field').style.display = this.checked ? 'block' : 'none';
-  updatePreview();
-});
 updatePreview();
 
 // ── Helpers ──
@@ -1066,11 +1205,11 @@ function probeStepHtml(label, status, statusText) {
 let _lastPreflight = null;
 async function runPreflight() {
   const btn = document.getElementById('probe-btn');
-  btn.className = 'btn btn-secondary sending'; btn.textContent = 'Checking...';
+  btn.className = 'btn btn-primary sending'; btn.textContent = 'Checking...';
 
-  setState('working', 'Running preflight...', ['done','active','','','']);
-  toggleSection('sec-dns');
-  document.getElementById('sec-dns').classList.add('open');
+  // Move to step 2
+  goStep(2);
+  setState('working', 'Running preflight...');
 
   const container = document.getElementById('dns-results');
   container.innerHTML = '<div class="pf-placeholder" style="color:#1d4ed8">Querying DNS records...</div>';
@@ -1086,12 +1225,16 @@ async function runPreflight() {
     const d = await resp.json();
     _lastPreflight = d;
 
+    if (!d || !d.probe) {
+      setState('failed', 'Preflight failed — please check all fields');
+      container.innerHTML = '<div style="padding:1rem;color:#dc2626;">Preflight returned an unexpected response. Verify From and To addresses are valid.</div>';
+      return;
+    }
     const pred = d.probe.prediction;
-
     if (pred === 'PORT_BLOCKED' || pred === 'ERROR' || pred === 'CANNOT_RESOLVE') {
-      setState('failed', 'Preflight failed: ' + pred, ['done','fail','','','']);
+      setState('failed', 'Preflight failed: ' + pred.replace(/_/g, ' ').toLowerCase());
     } else {
-      setState('ready', 'Preflight complete', ['done','done','','','']);
+      setState('ready', 'Preflight complete — ready to send');
     }
 
     // Badges
@@ -1148,13 +1291,13 @@ async function runPreflight() {
           '<p>' + (d.dmarc.record ? '<code>' + d.dmarc.record + '</code>' : 'No DMARC record found') + '</p>' +
           (d.dmarc.policy === 'none' ? '<p style="margin-top:.15rem;color:#dc2626"><strong>p=none = no protection</strong></p>' : '') + '</div>' +
       '</div>' +
-      '<details style="margin-top:.3rem"><summary style="font-size:.62rem;color:#9ca3af;cursor:pointer">Raw preflight log</summary>' +
+      '<details style="margin-top:.3rem"><summary style="font-size:.58rem;color:#9ca3af;cursor:pointer">Raw preflight log</summary>' +
         '<div class="log-output" style="margin-top:.2rem;max-height:200px;min-height:0">' + colorLog(d.log.join('\n')) + '</div></details>';
   } catch(err) {
-    setState('failed', 'Preflight error: ' + err.message, ['done','fail','','','']);
+    setState('failed', 'Preflight error: ' + err.message);
     container.innerHTML = '<div class="pf-placeholder" style="color:#dc2626">Error: ' + err.message + '</div>';
   }
-  btn.className = 'btn btn-secondary'; btn.textContent = 'Preflight';
+  btn.className = 'btn btn-primary'; btn.textContent = 'Run Preflight \u2192';
 }
 
 // ── Send ──
@@ -1163,10 +1306,7 @@ async function sendEmail() {
   const logEl = document.getElementById('log-output');
   btn.className = 'btn btn-primary sending'; btn.textContent = 'Sending...';
 
-  setState('working', 'Connecting to MX server...', ['done','done','active','','']);
-
-  // Open log section
-  document.getElementById('sec-log').classList.add('open');
+  setState('working', 'Connecting to MX server...');
   logEl.innerHTML = 'Connecting to MX server...\n';
 
   const fd = new FormData();
@@ -1174,8 +1314,8 @@ async function sendEmail() {
   fd.append('envelope_from', document.getElementById('envelope_from').value);
   fd.append('to_addr', document.getElementById('to_addr').value);
   fd.append('subject', document.getElementById('subject').value);
-  fd.append('body_text', document.getElementById('body_text').value);
-  fd.append('body_html', document.getElementById('use_html').checked ? document.getElementById('body_html').value : '');
+  fd.append('body_text', '');
+  fd.append('body_html', document.getElementById('body_html').value);
   for (const f of attachedFiles) fd.append('attachments', f);
 
   try {
@@ -1185,19 +1325,21 @@ async function sendEmail() {
     logEl.scrollTop = logEl.scrollHeight;
 
     if (data.success) {
-      btn.className = 'btn btn-primary success'; btn.textContent = 'Delivered';
-      setState('success', 'Delivered to ' + document.getElementById('to_addr').value + ' — waiting for open', ['done','done','done','done','active']);
+      btn.className = 'btn btn-primary success'; btn.textContent = 'Delivered ✓';
+      setState('success', 'Delivered to ' + document.getElementById('to_addr').value + ' — waiting for open');
       document.getElementById('log-badges').innerHTML = '<span class="section-badge badge-ok">Delivered</span>';
       if (data.track_id) startTrackingPolling(data.track_id);
+      // Auto-advance to dashboard after 2s
+      setTimeout(function() { goStep(3); }, 2000);
     } else {
-      setState('failed', 'Send failed — check SMTP log', ['done','done','fail','','']);
+      setState('failed', 'Send failed — check SMTP log');
       document.getElementById('log-badges').innerHTML = '<span class="section-badge badge-fail">Failed</span>';
     }
   } catch(err) {
     logEl.innerHTML = '<span class="error">Error: ' + err.message + '</span>';
-    setState('failed', 'Send error: ' + err.message, ['done','done','fail','','']);
+    setState('failed', 'Send error: ' + err.message);
   }
-  setTimeout(function() { btn.className = 'btn btn-primary'; btn.textContent = 'Send'; }, 4000);
+  setTimeout(function() { btn.className = 'btn btn-primary'; btn.textContent = 'Confirm & Send \u2192'; }, 4000);
 }
 
 // ── Open Tracking ──
@@ -1233,16 +1375,8 @@ function startTrackingPolling(trackId) {
           '<span class="dot"></span>' +
           '<span class="time">' + timeStr + '</span>' +
           '<span class="detail">Opened ' + data.opens.length + 'x — ' + data.to + ' — ' + data.subject + '</span>';
-        // Update state bar
-        setState('success', 'Opened ' + data.opens.length + 'x by ' + data.to, ['done','done','done','done','done']);
-        // Update tracking badges
+        setState('success', 'Opened ' + data.opens.length + 'x by ' + data.to);
         document.getElementById('track-badges').innerHTML = '<span class="section-badge badge-ok">' + data.opens.length + ' open' + (data.opens.length > 1 ? 's' : '') + '</span>';
-        // Flash the section header
-        var secTrack = document.getElementById('sec-track');
-        if (!secTrack.classList.contains('open')) {
-          secTrack.querySelector('.section-header').style.background = '#dcfce7';
-          setTimeout(function() { secTrack.querySelector('.section-header').style.background = ''; }, 3000);
-        }
       }
     } catch(e) {}
   }, 5000);
@@ -1259,29 +1393,33 @@ async function fetchDashEvents() {
     var resp = await fetch('/dashboard/events?since=' + _dashIdx);
     var data = await resp.json();
     if (data.events && data.events.length > 0) {
-      var container = document.getElementById('dash-events');
-      var empty = container.querySelector('.feed-empty');
-      if (empty) empty.remove();
-      data.events.forEach(function(ev) {
-        var div = document.createElement('div');
-        div.className = 'dash-event ev-' + ev.type;
-        var icon = ev.type === 'open' ? '&#128065;' : '&#9993;';
-        var title = ev.type === 'open'
-          ? 'Opened by ' + ev.to
-          : 'Sent to ' + ev.to;
-        var detail = ev.type === 'open'
-          ? 'from ' + (ev.ip || '') + ' — "' + (ev.subject || '') + '"'
-          : (ev.from || '') + ' — "' + (ev.subject || '') + '"';
-        var t = new Date(ev.time);
-        div.innerHTML =
-          '<div class="ev-icon">' + icon + '</div>' +
-          '<div class="ev-body"><div class="ev-title">' + title + '</div><div class="ev-detail">' + detail + '</div></div>' +
-          '<div class="ev-time">' + t.toLocaleTimeString() + '</div>';
-        container.prepend(div);
+      // Update both dashboard containers (wizard step-3 and tab view)
+      ['dash-events'].forEach(function(containerId) {
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        var empty = container.querySelector('.feed-empty');
+        if (empty) empty.remove();
+        data.events.forEach(function(ev) {
+          var div = document.createElement('div');
+          div.className = 'dash-event ev-' + ev.type;
+          var icon = ev.type === 'open' ? '&#128065;' : '&#9993;';
+          var title = ev.type === 'open'
+            ? 'Opened by ' + ev.to
+            : 'Sent to ' + ev.to;
+          var detail = ev.type === 'open'
+            ? 'from ' + (ev.ip || '') + ' — "' + (ev.subject || '') + '"'
+            : (ev.from || '') + ' — "' + (ev.subject || '') + '"';
+          var t = new Date(ev.time);
+          div.innerHTML =
+            '<div class="ev-icon">' + icon + '</div>' +
+            '<div class="ev-body"><div class="ev-title">' + title + '</div><div class="ev-detail">' + detail + '</div></div>' +
+            '<div class="ev-time">' + t.toLocaleTimeString() + '</div>';
+          container.prepend(div);
+        });
       });
       _dashIdx = data.total;
     }
-    // Update stats
+    // Update stats in both locations
     var tResp = await fetch('/track-events');
     var tData = await tResp.json();
     var sends = Object.keys(tData).length;
@@ -1289,9 +1427,310 @@ async function fetchDashEvents() {
     Object.values(tData).forEach(function(v) { opens += (v.opens || []).length; });
     document.getElementById('dash-sent').textContent = sends;
     document.getElementById('dash-opens').textContent = opens;
-    document.getElementById('dash-rate').textContent = sends > 0 ? Math.round(opens/sends*100) + '%' : '0%';
+    var rate = sends > 0 ? Math.round(opens/sends*100) + '%' : '0%';
+    document.getElementById('dash-rate').textContent = rate;
   } catch(e) {}
 }
+
+// ── Atmosphere system — spectral motes + nav wisps + ghost trail ──
+// Premium haunted atmosphere system
+(function() {
+
+  var canvas = document.getElementById('ambient-canvas');
+  var ctx = canvas.getContext('2d');
+
+  var W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+  var px=0, py=0, tx=0, ty=0;
+
+  window.addEventListener('mousemove', function(e){
+    var nx=(e.clientX/W)-0.5;
+    var ny=(e.clientY/H)-0.5;
+    tx=nx*12;
+    ty=ny*9;
+  });
+
+  var navImpulse=0;
+
+  function navBurst(){
+    navImpulse=1;
+    for(var i=0;i<motes.length;i++){
+      motes[i].vx+=(Math.random()-0.5)*0.12;
+      motes[i].vy+=(Math.random()-0.5)*0.09;
+      motes[i].flash=1;
+    }
+  }
+
+  var motes=[];
+  var MOTE_COUNT=34;
+
+  function makeMote(){
+    var depth=0.35+Math.random()*0.95;
+    return{
+      x:Math.random()*W,
+      y:Math.random()*H,
+      r:0.8+Math.random()*1.4,
+      depth:depth,
+      alphaBase:0.024+Math.random()*0.05,
+      alpha:0,
+      flash:0,
+      vx:(Math.random()-0.5)*0.045,
+      vy:-0.014-Math.random()*0.03,
+      phase:Math.random()*Math.PI*2,
+      speed:0.002+Math.random()*0.0035,
+      green:Math.random()>0.42
+    };
+  }
+
+  for(var i=0;i<MOTE_COUNT;i++) motes.push(makeMote());
+
+  // ── Ghost trail dots ──
+  var trailDots = [];
+  function spawnTrail(x, y, count) {
+    for (var i = 0; i < (count||1); i++) {
+      trailDots.push({
+        x: x + (Math.random()-0.5)*6,
+        y: y + (Math.random()-0.5)*6,
+        r: 0.6 + Math.random()*0.8,
+        life: 1,
+        decay: 0.025 + Math.random()*0.015
+      });
+    }
+  }
+
+  function drawMote(m){
+    var c=m.green?'34,197,94':'156,163,175';
+    var a=m.alpha+(m.flash*0.02);
+    var dx=m.x+px*m.depth;
+    var dy=m.y+py*m.depth;
+
+    ctx.beginPath();
+    ctx.arc(dx,dy,m.r,0,Math.PI*2);
+    ctx.fillStyle='rgba('+c+','+a+')';
+    ctx.fill();
+  }
+
+  function frame(){
+
+    ctx.clearRect(0,0,W,H);
+
+    px+=(tx-px)*0.045;
+    py+=(ty-py)*0.045;
+
+    navImpulse+=(0-navImpulse)*0.04;
+
+    for(var i=0;i<motes.length;i++){
+
+      var m=motes[i];
+
+      m.phase+=m.speed;
+      var breath=(Math.sin(m.phase)+1)/2;
+      var targetAlpha=m.alphaBase*(0.6+breath*0.8);
+
+      m.alpha+=(targetAlpha-m.alpha)*0.035;
+      m.flash*=0.93;
+
+      m.x+=m.vx;
+      m.y+=m.vy-navImpulse*0.18;
+
+      if(m.x<-24)m.x=W+24;
+      if(m.x>W+24)m.x=-24;
+      if(m.y<-24)m.y=H+24;
+      if(m.y>H+24)m.y=-24;
+
+      drawMote(m);
+    }
+
+    // Trail dots
+    for (var k = trailDots.length-1; k >= 0; k--) {
+      var d = trailDots[k]; d.life -= d.decay;
+      if (d.life <= 0) { trailDots.splice(k,1); continue; }
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(34,197,94,'+(d.life*0.12).toFixed(3)+')'; ctx.fill();
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  frame();
+
+  window._ambient={burst:navBurst,trail:spawnTrail};
+})();
+
+// ── Ghost mascot ──
+(function() {
+  var ghost = document.getElementById('ghost-mascot');
+  var logo = document.querySelector('.brand-logo');
+  var driftTimer = null;
+  var trailInt = null;
+  var ghostX = 0, ghostY = 0;
+  var GW = 27, GH = 31; // half-sizes for center offset
+
+  function getLogoPos() {
+    var r = logo.getBoundingClientRect();
+    return { x: r.left + r.width/2 - GW, y: r.top + r.height/2 - GH };
+  }
+
+  // Position at logo
+  var lp = getLogoPos();
+  ghost.style.left = lp.x + 'px'; ghost.style.top = lp.y + 'px';
+  ghostX = lp.x; ghostY = lp.y;
+
+  function startTrail() { stopTrail(); trailInt = setInterval(function(){ if(window._ambient) window._ambient.trail(ghostX+GW, ghostY+GH, 1); }, 120); }
+  function stopTrail() { if(trailInt){clearInterval(trailInt);trailInt=null;} }
+  function stopDrift() { if(driftTimer){clearInterval(driftTimer);driftTimer=null;} }
+
+  function resetGhost() {
+    stopDrift(); stopTrail();
+    ghost.className = 'ghost-mascot';
+    ghost.style.removeProperty('opacity');
+    ghost.style.removeProperty('transition');
+    var lp = getLogoPos();
+    ghost.style.left = lp.x+'px'; ghost.style.top = lp.y+'px';
+    ghostX = lp.x; ghostY = lp.y;
+    logo.classList.remove('ghost-away');
+    logo.classList.add('ghost-home');
+    // Clean up any esmokin text
+    document.querySelectorAll('.esmokin-text').forEach(function(e){ e.remove(); });
+  }
+
+  // ── Track current step for forward/backward detection ──
+  var currentStep = 1;
+
+  // ── Preflight ghost (step 2): fade in at DNS, drift down, fade out ──
+  function ghostPreflight() {
+    var dns = document.getElementById('sec-dns');
+    if (!dns) return;
+    var r = dns.getBoundingClientRect();
+    logo.classList.remove('ghost-home');
+    logo.classList.add('ghost-away');
+    // Position invisible at top-right of DNS panel
+    ghost.style.transition = 'none';
+    var tx = r.right - 70, ty = r.top - 15;
+    ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
+    ghostX = tx; ghostY = ty;
+    // Fade in after arriving (0.8s fade)
+    setTimeout(function() {
+      ghost.style.transition = '';
+      ghost.classList.add('fade-in');
+      startTrail();
+      // Drift down slowly
+      var panelBottom = r.bottom - 30;
+      driftTimer = setInterval(function() {
+        ty += 0.8;
+        ghost.style.top = ty+'px'; ghostY = ty;
+        if (ty >= panelBottom) {
+          stopDrift();
+          // Fade out (1s fade)
+          ghost.classList.remove('fade-in');
+          ghost.classList.add('fade-out');
+          stopTrail();
+          setTimeout(resetGhost, 1200);
+        }
+      }, 50);
+    }, 100);
+  }
+
+  // ── Monitor ghost (step 3): instant appear + esmokin + slow drift home ──
+  function ghostMonitor() {
+    var events = document.getElementById('dash-events');
+    if (!events) return;
+    var firstEvent = events.querySelector('.dash-event');
+    var r, tx, ty;
+    if (firstEvent) {
+      r = firstEvent.getBoundingClientRect();
+      tx = Math.min(r.right + 12, window.innerWidth - 70);
+      ty = r.top - 8;
+    } else {
+      r = events.getBoundingClientRect();
+      tx = r.left + r.width/2 + 100;
+      ty = r.top + 5;
+    }
+    // Pre-position INVISIBLE
+    ghost.style.transition = 'none';
+    ghost.style.left = tx+'px'; ghost.style.top = ty+'px';
+    ghostX = tx; ghostY = ty;
+    logo.classList.remove('ghost-home');
+    logo.classList.add('ghost-away');
+
+    // After 1s — INSTANT appear in place
+    setTimeout(function() {
+      ghost.classList.add('solid');
+      ghost.classList.add('wiggle');
+      // "esmokin!" text
+      var txt = document.createElement('div');
+      txt.className = 'esmokin-text';
+      txt.textContent = 'esmokin!';
+      txt.style.left = (tx + GW) + 'px';
+      txt.style.top = (ty - 22) + 'px';
+      document.body.appendChild(txt);
+
+      // After 2s visible — slow drift home (total visible ~3.5s, under 4s cap)
+      setTimeout(function() {
+        ghost.classList.remove('solid', 'wiggle');
+        ghost.style.transition = '';
+        ghost.classList.add('returning');
+        startTrail();
+        var lp = getLogoPos();
+        ghost.style.left = lp.x+'px'; ghost.style.top = lp.y+'px';
+        ghostX = lp.x; ghostY = lp.y;
+        // After drift completes — fully gone
+        setTimeout(function() {
+          stopTrail();
+          resetGhost();
+        }, 3000);
+      }, 1500);
+    }, 1000);
+  }
+
+  // ── Hook Run Preflight button ──
+  var origPreflight = window.runPreflight;
+  window.runPreflight = async function() {
+    var result = origPreflight();
+    setTimeout(ghostPreflight, 500);
+    return result;
+  };
+
+  // ── goStep override: forward = trigger ghost, backward = reset ──
+  var origGoStep = window.goStep;
+  window.goStep = function(n) {
+    origGoStep(n);
+    // Burst particles on every navigation
+    if (window._ambient && window._ambient.burst) window._ambient.burst();
+    // Always clean up current ghost state first
+    stopDrift(); stopTrail();
+    document.querySelectorAll('.esmokin-text').forEach(function(e){ e.remove(); });
+    resetGhost();
+
+    var wasForward = n > currentStep;
+    currentStep = n;
+
+    if (!wasForward) return; // backward or same — just reset, done
+
+    // Forward navigation — trigger ghost for that step
+    if (n === 2) {
+      setTimeout(ghostPreflight, 500);
+    } else if (n === 3) {
+      ghostMonitor();
+    }
+  };
+})();
 </script>
 </body>
 </html>"""
